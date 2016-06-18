@@ -1,4 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (global){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -23,10 +24,6 @@ var _item = require('./src/item');
 
 var _item2 = _interopRequireDefault(_item);
 
-var _lsfilter = require('./modes/lsfilter/lsfilter');
-
-var _lsfilter2 = _interopRequireDefault(_lsfilter);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -38,12 +35,12 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Cody = function (_Emitter) {
 	_inherits(Cody, _Emitter);
 
-	function Cody(options) {
+	function Cody(mode) {
 		_classCallCheck(this, Cody);
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		_this.mode = new options.mode();
+		_this.mode = new mode();
 		_this.lexer = new _lexer2.default(_this.mode);
 
 		_this.lexer.on('lexeme', function (lexeme) {
@@ -81,111 +78,14 @@ var Cody = function (_Emitter) {
 	return Cody;
 }(_emitter2.default);
 
-var C = new Cody({
-	mode: _lsfilter2.default
-});
+if (global) {
+	global.Cody = Cody;
+} else if (window) {
+	window.Cody = Cody;
+}
 
-C.on('token', function (token) {
-	console.log(token);
-});
-C.update();
-
-},{"./modes/lsfilter/lsfilter":2,"./src/arraymanipulator":3,"./src/emitter":4,"./src/item":5,"./src/lexer":7,"./src/stream":9}],2:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _lexeme_map;
-
-var _mode = require('../../src/mode');
-
-var _mode2 = _interopRequireDefault(_mode);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var operators = ['=', '!', '>', '<', '~', '^', '!=', '<=', '>=', '~~', '!~', '!~~', '!=~', '+', '-', '/', '*', '%'];
-
-var ESCAPE = '\\';
-var lexeme_map = (_lexeme_map = {
-	STRING_DELIM: '"',
-	LEFT_BRACKET: '[',
-	RIGHT_BRACKET: ']',
-	LEFT_PAREN: '(',
-	RIGHT_PAREN: ')',
-	LEFT_BRACE: '['
-}, _defineProperty(_lexeme_map, 'LEFT_BRACE', '['), _defineProperty(_lexeme_map, 'DOT', '['), _lexeme_map);
-
-var lexemes = Object.keys(lexeme_map).map(function (K) {
-	return lexeme_map[K];
-}).concat(operators);
-
-var keywords = ['and', 'or'];
-
-var LSFilterMode = function (_Mode) {
-	_inherits(LSFilterMode, _Mode);
-
-	function LSFilterMode() {
-		_classCallCheck(this, LSFilterMode);
-
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(LSFilterMode).call(this));
-
-		_this.lexemes = lexemes;
-		_this.keywords = keywords;
-
-		return _this;
-	}
-
-	_createClass(LSFilterMode, [{
-		key: 'tokenize',
-		value: function tokenize(lexeme, buffer, index) {
-
-			if (lexeme.value === '[') return this.get_token('l_bracket', lexeme);else if (lexeme.value === ']') return this.get_token('r_bracket', lexeme);else if (lexeme.value === '(') return this.get_token('l_paren', lexeme);else if (lexeme.value === ')') return this.get_token('r_paren', lexeme);else if (lexeme.value === '{') return this.get_token('l_brace', lexeme);else if (lexeme.value === '}') return this.get_token('r_brace', lexeme);else if (lexeme.value === '.') return this.get_token('dot', lexeme.value, lexeme.offset);else if (lexeme.value === lexeme_map.STRING_DELIM) {
-				return this.get_token('string', this.get_lexeme(buffer.until(function (L) {
-					return L.value === lexeme_map.STRING_DELIM;
-				}).map(function (L) {
-					return L.value;
-				}).join(''), lexeme.offset));
-			} else if (operators.includes(lexeme.value)) {
-				var token = this.get_token('operator', this.get_lexeme([lexeme].concat(buffer.until(function (L) {
-					return !operators.includes(L.value);
-				})).map(function (L) {
-					return L.value;
-				}).join(''), lexeme.offset));
-				buffer.backward();
-				return token;
-			} else if (keywords.includes(lexeme.value)) {
-				return this.get_token('keyword', lexeme);
-			} else if (lexeme.value.match(/^[\w_][\w\d_]+$/)) {
-				return this.get_token('variable', lexeme);
-			} else if (lexeme.value.match(/^\d+$/)) {
-				return this.get_token('number', lexeme);
-			} else if (lexeme.value.match(/^\s+$/)) {
-				return this.get_token('whitespace', lexeme);
-			}
-
-			return this.get_token('unknown', lexeme);
-		}
-	}]);
-
-	return LSFilterMode;
-}(_mode2.default);
-
-exports.default = LSFilterMode;
-;
-
-},{"../../src/mode":8}],3:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./src/arraymanipulator":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/stream":7}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -266,7 +166,7 @@ var ArrayManipulator = function () {
 
 exports.default = ArrayManipulator;
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -333,7 +233,7 @@ var Emitter = function () {
 
 exports.default = Emitter;
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -393,7 +293,7 @@ var Item = function () {
 
 exports.default = Item;
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -411,7 +311,7 @@ var Lexeme = function Lexeme(value, offset) {
 
 exports.default = Lexeme;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -549,69 +449,7 @@ var Lexer = function (_Emitter) {
 
 exports.default = Lexer;
 
-},{"./emitter":4,"./lexeme":6,"./token":10}],8:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _lexeme = require('./lexeme');
-
-var _lexeme2 = _interopRequireDefault(_lexeme);
-
-var _token = require('./token');
-
-var _token2 = _interopRequireDefault(_token);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Mode = function () {
-	function Mode() {
-		_classCallCheck(this, Mode);
-
-		this.lexemes = [];
-		this.keywords = [];
-		this.index;
-	}
-
-	_createClass(Mode, [{
-		key: 'tokenize',
-		value: function tokenize(lexeme, list) {
-			return this.get_token('unknown', lexeme);
-		}
-	}, {
-		key: 'get_token',
-		value: function get_token(type, lexeme) {
-			return new _token2.default(type, lexeme.value, lexeme.offset);
-		}
-	}, {
-		key: 'get_lexeme',
-		value: function get_lexeme(value, offset) {
-			return new _lexeme2.default(value, offset);
-		}
-	}, {
-		key: 'set_index',
-		value: function set_index(value) {
-			this.index = value;
-		}
-	}, {
-		key: 'get_index',
-		value: function get_index() {
-			return this.index;
-		}
-	}]);
-
-	return Mode;
-}();
-
-exports.default = Mode;
-
-},{"./lexeme":6,"./token":10}],9:[function(require,module,exports){
+},{"./emitter":3,"./lexeme":5,"./token":8}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -661,7 +499,7 @@ var Stream = function () {
 
 exports.default = Stream;
 
-},{}],10:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

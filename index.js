@@ -7,15 +7,13 @@ import Emitter from './src/emitter';
 import ArrayManipulator from './src/arraymanipulator';
 import Item from './src/item';
 
-import LSFilterMode from './modes/lsfilter/lsfilter';
-
 class Cody extends Emitter {
 
-	constructor (options) {
+	constructor (mode) {
 
 		super();
 
-		this.mode = new options.mode();
+		this.mode = new mode();
 		this.lexer = new Lexer(this.mode);
 
 		this.lexer.on('lexeme', lexeme => this.emit('lexeme', lexeme));
@@ -44,10 +42,8 @@ class Cody extends Emitter {
 
 }
 
-let C = new Cody({
-	mode: LSFilterMode
-});
-
-C.on('token', (token) => {console.log(token);});
-C.update();
-
+if (global) {
+	global.Cody = Cody;
+} else if (window) {
+	window.Cody = Cody;
+}

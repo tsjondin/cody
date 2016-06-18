@@ -32,7 +32,7 @@ const keywords = [
 	'or'
 ];
 
-export default class LSFilterMode extends Mode {
+export default class GenericQLMode extends Mode {
 
 	constructor () {
 
@@ -89,3 +89,5 @@ export default class LSFilterMode extends Mode {
 
 };
 
+if (global) global.GenericQLMode = GenericQLMode;
+else if (window) window.GenericQLMode = GenericQLMode;
