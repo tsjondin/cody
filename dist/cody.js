@@ -50,20 +50,49 @@ var Cody = function (_Emitter) {
 			return _this.emit('token', token);
 		});
 
-		_this.stream;
+		_this.stream = new _stream2.default("");
+		_this.lexemes = [];
 
 		return _this;
 	}
 
 	_createClass(Cody, [{
-		key: 'update',
-		value: function update() {
+		key: 'get_diff',
+		value: function get_diff(L1, L2) {
+			return [].concat(L1.reduce(function (D, L, i) {
+				if (!L2[i] || L.value !== L2[i].value || L.offset !== L2[i].offset) D.push(L);
+				return D;
+			}, []), L2.reduce(function (D, L, i) {
+				if (!L1[i] || L.value !== L1[i].value || L.offset !== L1[i].offset) D.push(L);
+				return D;
+			}, []));
+		}
+	}, {
+		key: 'do_update',
+		value: function do_update(text) {
 			var _this2 = this;
 
-			var stream = new _stream2.default('[services] (host.name ~~ "^web" or description ~~ "web") and state != 0');
+			var force = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
-			var lexemes = new _arraymutator2.default(this.lexer.scan(stream));
-			var tokens = this.lexer.evaluate(lexemes);
+
+			if (!force) {
+
+				var diff = void 0;
+
+				if (text === this.stream.buffer) return;
+				this.stream = new _stream2.default(text);
+
+				var new_lexemes = this.lexer.scan(this.stream);
+				if ((diff = this.get_diff(this.lexemes, new_lexemes)).length === 0) return;
+				this.lexemes = new_lexemes;
+			} else {
+				this.stream = new _stream2.default(text);
+				this.lexemes = this.lexer.scan(stream);
+			}
+
+			console.log("updating");
+
+			var tokens = this.lexer.evaluate(new _arraymutator2.default(this.lexemes));
 
 			var items = tokens.map(function (T) {
 				var item = new _item2.default(T.type, T.value, T.offset);
