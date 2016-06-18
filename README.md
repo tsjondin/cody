@@ -15,6 +15,19 @@ large/complex products.
 
 #### constructor (Mode.constructor mode)
 
+Creates a new instance of Cody, the mode passed will be used for lexing and
+tokenization of the stream
+
+#### get_cursor () -> Cursor
+
+Gets the Cursor, a reflection of the caret position within the text Cody is
+rendering, can be overriden for different renderings.
+
+#### do_update (string text, bool force = false) -> self
+
+Updates Cody with new text to parse, by default only updates if there has been
+a change to the content unless the force bool is set to true.
+
 ## Mode development
 
 *[needs rewording]*
