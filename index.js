@@ -4,7 +4,7 @@ import Lexer from './src/lexer';
 import Stream from './src/stream';
 import Emitter from './src/emitter';
 
-import ArrayManipulator from './src/arraymanipulator';
+import ArrayMutator from './src/arraymutator';
 import Item from './src/item';
 
 class Cody extends Emitter {
@@ -27,7 +27,7 @@ class Cody extends Emitter {
 
 		let stream = new Stream(`[services] (host.name ~~ "^web" or description ~~ "web") and state != 0`);
 
-		let lexemes = new ArrayManipulator(this.lexer.scan(stream));
+		let lexemes = new ArrayMutator(this.lexer.scan(stream));
 		let tokens = this.lexer.evaluate(lexemes);
 
 		let items = tokens.map(T => {

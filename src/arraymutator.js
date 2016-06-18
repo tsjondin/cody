@@ -1,6 +1,6 @@
 "use strict";
 
-export default class ArrayManipulator {
+export default class ArrayMutator {
 
 	constructor (array) {
 

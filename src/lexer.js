@@ -76,10 +76,10 @@ export default class Lexer extends Emitter {
 	}
 
 	/**
-	 * Takes an ArrayManipulator instance of Lexeme's, likely from the scan, and
+	 * Takes an ArrayMutator instance of Lexeme's, likely from the scan, and
 	 * returns a list of Token's
 	 *
-	 * @param ArrayManipulator<Lexeme> lexemes
+	 * @param ArrayMutator<Lexeme> lexemes
 	 * @param Function callback Called for every Token tokenized
 	 * @return Array<Token>
 	 */
