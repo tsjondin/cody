@@ -52,9 +52,18 @@ parsing.
 
 #### get_token (string type, Lexeme lexeme)
 #### get_lexeme (mixed value, integer offset)
-#### tokenize (Lexeme, ArrayManipulator<Lexeme>)
+#### tokenize (Lexeme, ArrayMutator<Lexeme>) -> Token
 
-It has three objects you as an implementor of a Mode (DSL handler) should know
+The tokenize function of a Mode takes the current Lexeme and an ArrayMutator of
+all lexemes that have been scanned. The tokenize function should always return a
+Token. The get_token function should in most cases be used to generate the
+Token to return in order to avoid any hassle, use the Token class directly only
+if you need it. In addition your may override the get_token function if you
+want to do something different with it in a general manner.
+
+### Important objects to know of
+
+There are three objects you as an implementor of a Mode (DSL handler) should know
 of, each object has the possibility to retrive the object that made this object
 up, i.e. an Item can reieve the Token it was made from, a Token can retrieve
 the Lexeme's that made it and a Lexeme can retrieve the raw stream chunk that
@@ -70,4 +79,18 @@ Has one or more Lexeme values as its value and now contains the intended purpose
 
 ### Item
 
-The representation of a Token the moment before it is rendered
+The representation of a Token the moment before it is rendered. When it is time
+to render an Item it is passed to Cody's rendering function, which you may
+override should you want to, this can be done in order to support other
+renderings than HTML tags, such as JSX.
+
+As can bee seen from the methods on the Item, its intention is HTML, but you
+may use the values as you please from a rendering override. Cody's only
+knowledge of HTML resides within the rendering function.
+
+#### add_class (string classname) -> self
+#### remove_class (string classname) -> self
+#### get_classes () -> Array<string>
+#### set_attribute (string key, mixed value) -> self
+#### get_attribute (string key) -> mixed
+

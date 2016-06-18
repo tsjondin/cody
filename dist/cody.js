@@ -16,9 +16,9 @@ var _emitter = require('./src/emitter');
 
 var _emitter2 = _interopRequireDefault(_emitter);
 
-var _arraymanipulator = require('./src/arraymanipulator');
+var _arraymutator = require('./src/arraymutator');
 
-var _arraymanipulator2 = _interopRequireDefault(_arraymanipulator);
+var _arraymutator2 = _interopRequireDefault(_arraymutator);
 
 var _item = require('./src/item');
 
@@ -62,7 +62,7 @@ var Cody = function (_Emitter) {
 
 			var stream = new _stream2.default('[services] (host.name ~~ "^web" or description ~~ "web") and state != 0');
 
-			var lexemes = new _arraymanipulator2.default(this.lexer.scan(stream));
+			var lexemes = new _arraymutator2.default(this.lexer.scan(stream));
 			var tokens = this.lexer.evaluate(lexemes);
 
 			var items = tokens.map(function (T) {
@@ -85,7 +85,7 @@ if (global) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./src/arraymanipulator":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/stream":7}],2:[function(require,module,exports){
+},{"./src/arraymutator":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/stream":7}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -96,9 +96,9 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var ArrayManipulator = function () {
-	function ArrayManipulator(array) {
-		_classCallCheck(this, ArrayManipulator);
+var ArrayMutator = function () {
+	function ArrayMutator(array) {
+		_classCallCheck(this, ArrayMutator);
 
 		var pointer = -1;
 
@@ -116,7 +116,7 @@ var ArrayManipulator = function () {
 		};
 	}
 
-	_createClass(ArrayManipulator, [{
+	_createClass(ArrayMutator, [{
 		key: "forward",
 		value: function forward() {
 			this.move(this.position() + 1);
@@ -161,10 +161,10 @@ var ArrayManipulator = function () {
 		}
 	}]);
 
-	return ArrayManipulator;
+	return ArrayMutator;
 }();
 
-exports.default = ArrayManipulator;
+exports.default = ArrayMutator;
 
 },{}],3:[function(require,module,exports){
 "use strict";
@@ -419,10 +419,10 @@ var Lexer = function (_Emitter) {
 		}
 
 		/**
-   * Takes an ArrayManipulator instance of Lexeme's, likely from the scan, and
+   * Takes an ArrayMutator instance of Lexeme's, likely from the scan, and
    * returns a list of Token's
    *
-   * @param ArrayManipulator<Lexeme> lexemes
+   * @param ArrayMutator<Lexeme> lexemes
    * @param Function callback Called for every Token tokenized
    * @return Array<Token>
    */
