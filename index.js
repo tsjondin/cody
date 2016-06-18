@@ -9,15 +9,21 @@ import Item from './src/item';
 
 class Cody extends Emitter {
 
-	constructor (mode) {
+	constructor (options) {
 
 		super();
 
-		this.mode = new mode();
+		this.mode = new options.mode();
+		this.cursor = new options.cursor();
+		this.renderer = new options.renderer();
+
 		this.lexer = new Lexer(this.mode);
 
 		this.lexer.on('lexeme', lexeme => this.emit('lexeme', lexeme));
 		this.lexer.on('token', token => this.emit('token', token));
+
+		this.cursor.set_context(options.context);
+		this.renderer.set_context(options.context);
 
 		this.stream = new Stream("");
 		this.lexemes = [];
@@ -57,8 +63,6 @@ class Cody extends Emitter {
 			this.lexemes = this.lexer.scan(stream);
 		}
 
-		console.log("updating");
-
 		let tokens = this.lexer.evaluate(
 			new ArrayMutator(this.lexemes)
 		);
@@ -66,6 +70,7 @@ class Cody extends Emitter {
 		let items = tokens.map(T => {
 			let item = new Item(T.type, T.value, T.offset);
 			this.emit('item', item);
+			this.renderer.do_render(item);
 			return item;
 		});
 

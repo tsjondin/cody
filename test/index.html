@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      .cody {
+        font-family: monospace;
+      }
+
+      .cody *[class^="cody-item-"] {
+        white-space: pre;
+      }
+
+      .cody .cody-item-keyword {
+        color: #3399bb;
+      }
+
+      .cody .cody-item-number {
+        color: #996611;
+      }
+    </style>
+    <script src="../dist/cody.js"></script>
+    <script src="../dist/modes/genericql.js"></script>
+    <script src="../dist/renderers/htmlrenderer.js"></script>
+    <script src="../dist/cursors/htmlcursor.js"></script>
+  </head>
+  <body>
+    <div id="thing"></div>
+    <script src="./test.js"></script>
+  </body>
+</html>

@@ -23,6 +23,10 @@ export default class Item {
 		return this.attr[key];
 	}
 
+	get_type () {
+		return this.type;
+	}
+
 	add_class (name) {
 		if (!this.classes.includes(name)) this.classes.push(name);
 		return this;

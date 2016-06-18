@@ -10,7 +10,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _lexeme_map;
 
-var _mode = require('../../src/mode');
+var _mode = require('../src/mode');
 
 var _mode2 = _interopRequireDefault(_mode);
 
@@ -27,6 +27,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 var operators = ['=', '!', '>', '<', '~', '^', '!=', '<=', '>=', '~~', '!~', '!~~', '!=~', '+', '-', '/', '*', '%'];
 
 var ESCAPE = '\\';
+
 var lexeme_map = (_lexeme_map = {
 	STRING_DELIM: '"',
 	LEFT_BRACKET: '[',
@@ -97,7 +98,7 @@ exports.default = GenericQLMode;
 if (global) global.GenericQLMode = GenericQLMode;else if (window) window.GenericQLMode = GenericQLMode;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../../src/mode":3}],2:[function(require,module,exports){
+},{"../src/mode":3}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

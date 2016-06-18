@@ -34,9 +34,9 @@ export default class Lexer extends Emitter {
 		let lexemes = [];
 
 		let new_lexeme = (value, stream) => {
-			let _lexeme = new Lexeme(value, (stream.position - value.length) + 1);
-			this.emit('lexeme', _lexeme);
-			return _lexeme;
+			let L = new Lexeme(value, (stream.position - value.length) + 1);
+			this.emit('lexeme', L);
+			return L;
 		};
 
 		while (ch = stream.next()) {
@@ -46,7 +46,9 @@ export default class Lexer extends Emitter {
 				if (ws.length > 0) {
 					lexemes.push(new_lexeme(ws, stream));
 					ws = "";
-				} else if (value.length > 0) {
+				}
+
+				if (value.length > 0) {
 					lexemes.push(new_lexeme(value, stream));
 					value = "";
 				}
@@ -54,10 +56,17 @@ export default class Lexer extends Emitter {
 				lexemes.push(new_lexeme(ch, stream));
 
 			} else if (ch === ' ') {
+
+
 				if (value.length > 0) {
+					if (ws.length > 0) {
+						lexemes.push(new_lexeme(ws, stream));
+						ws = "";
+					}
 					lexemes.push(new_lexeme(value, stream));
 					value = "";
 				}
+
 				ws += ch;
 			} else value += ch;
 

@@ -1,6 +1,6 @@
 "use strict";
 
-import Mode from '../../src/mode';
+import Mode from '../src/mode';
 
 const operators = [
 	'=', '!', '>',
@@ -12,6 +12,7 @@ const operators = [
 ];
 
 const ESCAPE = '\\';
+
 const lexeme_map = {
 	STRING_DELIM: '"',
 	LEFT_BRACKET: '[',

@@ -35,12 +35,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Cody = function (_Emitter) {
 	_inherits(Cody, _Emitter);
 
-	function Cody(mode) {
+	function Cody(options) {
 		_classCallCheck(this, Cody);
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		_this.mode = new mode();
+		_this.mode = new options.mode();
+		_this.cursor = new options.cursor();
+		_this.renderer = new options.renderer();
+
 		_this.lexer = new _lexer2.default(_this.mode);
 
 		_this.lexer.on('lexeme', function (lexeme) {
@@ -49,6 +52,9 @@ var Cody = function (_Emitter) {
 		_this.lexer.on('token', function (token) {
 			return _this.emit('token', token);
 		});
+
+		_this.cursor.set_context(options.context);
+		_this.renderer.set_context(options.context);
 
 		_this.stream = new _stream2.default("");
 		_this.lexemes = [];
@@ -90,13 +96,12 @@ var Cody = function (_Emitter) {
 				this.lexemes = this.lexer.scan(stream);
 			}
 
-			console.log("updating");
-
 			var tokens = this.lexer.evaluate(new _arraymutator2.default(this.lexemes));
 
 			var items = tokens.map(function (T) {
 				var item = new _item2.default(T.type, T.value, T.offset);
 				_this2.emit('item', item);
+				_this2.renderer.do_render(item);
 				return item;
 			});
 
@@ -297,6 +302,11 @@ var Item = function () {
 			return this.attr[key];
 		}
 	}, {
+		key: "get_type",
+		value: function get_type() {
+			return this.type;
+		}
+	}, {
 		key: "add_class",
 		value: function add_class(name) {
 			if (!this.classes.includes(name)) this.classes.push(name);
@@ -357,9 +367,9 @@ var _token = require('./token');
 
 var _token2 = _interopRequireDefault(_token);
 
-var _lexeme2 = require('./lexeme');
+var _lexeme = require('./lexeme');
 
-var _lexeme3 = _interopRequireDefault(_lexeme2);
+var _lexeme2 = _interopRequireDefault(_lexeme);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -409,9 +419,9 @@ var Lexer = function (_Emitter) {
 			var lexemes = [];
 
 			var new_lexeme = function new_lexeme(value, stream) {
-				var _lexeme = new _lexeme3.default(value, stream.position - value.length + 1);
-				_this2.emit('lexeme', _lexeme);
-				return _lexeme;
+				var L = new _lexeme2.default(value, stream.position - value.length + 1);
+				_this2.emit('lexeme', L);
+				return L;
 			};
 
 			while (ch = stream.next()) {
@@ -421,17 +431,25 @@ var Lexer = function (_Emitter) {
 					if (ws.length > 0) {
 						lexemes.push(new_lexeme(ws, stream));
 						ws = "";
-					} else if (value.length > 0) {
+					}
+
+					if (value.length > 0) {
 						lexemes.push(new_lexeme(value, stream));
 						value = "";
 					}
 
 					lexemes.push(new_lexeme(ch, stream));
 				} else if (ch === ' ') {
+
 					if (value.length > 0) {
+						if (ws.length > 0) {
+							lexemes.push(new_lexeme(ws, stream));
+							ws = "";
+						}
 						lexemes.push(new_lexeme(value, stream));
 						value = "";
 					}
+
 					ws += ch;
 				} else value += ch;
 			}
