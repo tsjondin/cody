@@ -22,10 +22,15 @@ Lexeme in your Mode is defined as a character of some special importance which
 will trigger a break in the character stream and start a Lexeme build. For
 example, if you say that the pund-sign (#) has importance you you and the
 string scanned by Cody is:
+
 	hello # world
+
 this would result roughly:
+
 	['hello ', Lexeme('#'), ' world']
+
 However, cody by default has two implicit Lexemes to make your life a little bit easier, these handle whitespace and non-whitespace. As such the scanned string actually becomes this:
+
 	[Lexeme(hello), Lexeme(' '), Lexeme('#'), Lexeme(' '), Lexeme('world')]
 
 ### Mode
