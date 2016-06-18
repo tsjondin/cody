@@ -52,7 +52,7 @@ parsing.
 
 #### get_token (string type, Lexeme lexeme)
 #### get_lexeme (mixed value, integer offset)
-#### tokenize (Lexeme, ArrayMutator<Lexeme>) -> Token
+#### tokenize (Lexeme, ArrayMutator&lt;Lexeme&gt;) -> Token
 
 The tokenize function of a Mode takes the current Lexeme and an ArrayMutator of
 all lexemes that have been scanned. The tokenize function should always return a
@@ -71,11 +71,38 @@ makes it up.
 
 ### Lexeme
 
-A part of the text that has significance
+A part of the Stream that has significance, most often operators and characters
+with syntactic meaning.
+
+#### set_value (string value) -> self
+
+Sets the value of the Lexeme
+
+#### set_offset (integer offset) -> self
+
+Sets the offset of the Lexeme, this is generally inherited from the Stream at
+the position it was read. But a manipulated Lexeme may need an updated offset.
+
+#### set_type (string type) -> self
+
+Sets the type of the Token
 
 ### Token
 
 Has one or more Lexeme values as its value and now contains the intended purpose
+
+#### set_value (string value) -> self
+
+Sets the value of the Token
+
+#### set_offset (integer offset) -> self
+
+Sets the offset of the Token, this is generally inherited from the first Lexeme
+that made up the Token but could be different if the Token is manipulated.
+
+#### set_type (string type) -> self
+
+Sets the type of the Token
 
 ### Item
 
@@ -89,8 +116,21 @@ may use the values as you please from a rendering override. Cody's only
 knowledge of HTML resides within the rendering function.
 
 #### add_class (string classname) -> self
+
+Adds a class to the Item class list
+
 #### remove_class (string classname) -> self
-#### get_classes () -> Array<string>
+
+Removes the class from the Item class list, if it exists.
+
+#### get_classes () -> Array&lt;string&gt;
+
+Returns a copy of the Items class list
+
 #### set_attribute (string key, mixed value) -> self
+
+Sets an attribute on the Item
+
 #### get_attribute (string key) -> mixed
 
+Retrieves an attribute from the Item
