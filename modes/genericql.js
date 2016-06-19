@@ -2,25 +2,10 @@
 
 import Mode from '../src/mode';
 import Token from '../src/token';
+import Lexeme from '../src/lexeme';
 
 if (!Object.values) {
 	Object.values = (o) => Object.keys(o).map(K => o[K]);
-}
-
-if (!Array.consume) {
-	Array.consume = (A, C) => {
-
-		let item;
-		let sub = [];
-
-		while (item = A.shift()) {
-			sub.push(item);
-			if (C(item)) break;
-		}
-
-		return sub;
-
-	};
 }
 
 const operators = {
@@ -96,7 +81,7 @@ export default class GenericQLMode extends Mode {
 			 */
 			let offset = lexemes[0].offset;
 			let string = [lexemes.shift()].concat(
-				Array.consume(lexemes, (L) => (L.value === syntax_map.string))
+				this.consume(lexemes, (L) => (L.value === syntax_map.string))
 			);
 
 			return [
@@ -117,7 +102,7 @@ export default class GenericQLMode extends Mode {
 			 * stream and then validate the built operator
 			 */
 			let offset = lexemes[0].offset;
-			let op = Array.consume(lexemes, L => (!operator_lexemes.includes(L.value)));
+			let op = this.consume(lexemes, L => (!operator_lexemes.includes(L.value)));
 			lexemes.unshift(op.pop());
 
 			let value = op.map(L => L.value).join('');
@@ -156,7 +141,7 @@ export default class GenericQLMode extends Mode {
 
 	accept_name (lexemes) {
 
-		if (lexemes[0].value.match(/^[\w_][\w\d_]+$/)) {
+		if (lexemes[0].value.match(/^[a-zA-Z_][\w_]+$/)) {
 			let lexeme = lexemes.shift();
 			return [
 				new Token('variable', lexeme.value, lexeme.offset),
@@ -167,10 +152,14 @@ export default class GenericQLMode extends Mode {
 	}
 
 	accept_number (lexemes) {
-		if (lexemes[0].value.match(/^\d+$/)) {
-			let lexeme = lexemes.shift();
+		if (lexemes[0].value.match(/\d/)) {
+
+			let offset = lexemes[0].offset;
+			let number = this.consume(lexemes, L => (!L.value.match(/\d/)));
+			lexemes.unshift(number.pop());
+
 			return [
-				new Token('number', lexeme.value, lexeme.offset),
+				new Token('number', number.map(L => L.value).join(''), offset),
 				this.accept_conditional_operator
 			];
 		}
@@ -181,7 +170,7 @@ export default class GenericQLMode extends Mode {
 		if (lexemes[0].value === syntax_map.leftparen) {
 
 			let start = lexemes.shift();
-			let block = Array.consume(lexemes, (L) => (L.value === syntax_map.rightparen));
+			let block = this.consume(lexemes, (L) => (L.value === syntax_map.rightparen));
 			let end = block.pop();
 
 			let tokens = this.lexer.evaluate(block);

@@ -13,8 +13,8 @@ class Cody extends Emitter {
 
 		super();
 
-		this.cursor = new options.cursor();
-		this.renderer = new options.renderer();
+		this.cursor = new options.cursor(this);
+		this.renderer = new options.renderer(this);
 
 		this.lexer = new Lexer();
 		this.mode = new options.mode(this.lexer);
@@ -64,15 +64,21 @@ class Cody extends Emitter {
 			this.lexemes = this.lexer.scan(stream);
 		}
 
-		let tokens = this.lexer.evaluate(this.lexemes);
+		let items = [];
 
-		tokens.forEach(token => {
-			let item = new Item(token);
-			this.emit('item', item);
-			this.renderer.do_render(item);
-			return item;
-		});
+		try {
+			let tokens = this.lexer.evaluate(this.lexemes);
+			items = tokens.map(token => {
+				let item = new Item(token);
+				this.emit('item', item);
+				return item;
+			});
+			this.emit('success');
+		} catch (e) {
+			this.emit('error', e);
+		}
 
+		this.renderer.do_render(items);
 		return this;
 
 	}

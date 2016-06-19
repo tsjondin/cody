@@ -43,8 +43,8 @@ var Cody = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		_this.cursor = new options.cursor();
-		_this.renderer = new options.renderer();
+		_this.cursor = new options.cursor(_this);
+		_this.renderer = new options.renderer(_this);
 
 		_this.lexer = new _lexer2.default();
 		_this.mode = new options.mode(_this.lexer);
@@ -100,15 +100,21 @@ var Cody = function (_Emitter) {
 				this.lexemes = this.lexer.scan(stream);
 			}
 
-			var tokens = this.lexer.evaluate(this.lexemes);
+			var items = [];
 
-			tokens.forEach(function (token) {
-				var item = new _item2.default(token);
-				_this2.emit('item', item);
-				_this2.renderer.do_render(item);
-				return item;
-			});
+			try {
+				var tokens = this.lexer.evaluate(this.lexemes);
+				items = tokens.map(function (token) {
+					var item = new _item2.default(token);
+					_this2.emit('item', item);
+					return item;
+				});
+				this.emit('success');
+			} catch (e) {
+				this.emit('error', e);
+			}
 
+			this.renderer.do_render(items);
 			return this;
 		}
 	}]);
@@ -507,6 +513,7 @@ var Lexer = function (_Emitter) {
 
 			while (lexemes.length > 0) {
 
+				if (lexemes[0] === 'end') break;
 				if (lexemes[0].value.match(/\s+/)) {
 					var lexeme = lexemes.shift();
 					token = new _token2.default('whitespace', lexeme.value, lexeme.offset);
@@ -518,6 +525,7 @@ var Lexer = function (_Emitter) {
 					token = _result[0];
 					accept = _result[1];
 				}
+
 				this.emit('token', token);
 				tokens.push(token);
 			}

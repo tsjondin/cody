@@ -2,8 +2,10 @@
 
 export default class Cursor {
 
-	constructor () {
+	constructor (editor) {
 		this.context;
+		this.editor = editor;
+		this.offset = 0;
 	}
 
 	get_offset () {

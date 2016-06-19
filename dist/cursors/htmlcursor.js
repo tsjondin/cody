@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _cursor = require('../src/cursor');
+var _cursor = require("../src/cursor");
 
 var _cursor2 = _interopRequireDefault(_cursor);
 
@@ -22,26 +22,70 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var HTMLCursor = function (_Cursor) {
 	_inherits(HTMLCursor, _Cursor);
 
-	function HTMLCursor() {
+	function HTMLCursor(editor) {
 		_classCallCheck(this, HTMLCursor);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(HTMLCursor).call(this));
-
-		_this.reflection = document.createElement('span');
-		_this.reflection.className = 'cody-cursor';
-		return _this;
+		return _possibleConstructorReturn(this, Object.getPrototypeOf(HTMLCursor).call(this, editor));
 	}
 
 	_createClass(HTMLCursor, [{
-		key: 'get_offset',
-		value: function get_offset() {
-			return 0;
+		key: "get_start_node",
+		value: function get_start_node() {
+			return window.getSelection().anchorNode;
 		}
 	}, {
-		key: 'set_context',
+		key: "get_end_node",
+		value: function get_end_node() {
+			return window.getSelection().focusNode;
+		}
+	}, {
+		key: "get_offset",
+		value: function get_offset() {
+
+			var offset = 0;
+			var range = window.getSelection().getRangeAt(0);
+			var pre_range = range.cloneRange();
+
+			pre_range.selectNodeContents(this.context);
+			pre_range.setEnd(range.endContainer, range.endOffset);
+
+			offset = pre_range.toString().length;
+			return offset;
+		}
+	}, {
+		key: "set_offset",
+		value: function set_offset(offset) {
+
+			var selection = getSelection();
+			var range = document.createRange();
+
+			var children = Array.prototype.slice.call(this.context.children, 0);
+			var last = void 0;
+
+			while (offset > 0) {
+				if (children.length === 0) {
+					offset = 0;
+					break;
+				} else {
+					last = children.shift();
+					if (last.children.length > 0) {
+						children = Array.prototype.slice.call(last.children, 0).concat(children);
+					} else {
+						offset -= last.textContent.length;
+					}
+				}
+			}
+
+			offset = last.textContent.length + offset - 1;
+			range.setStart(last.childNodes[0], offset);
+
+			selection.removeAllRanges();
+			selection.addRange(range);
+		}
+	}, {
+		key: "set_context",
 		value: function set_context(context) {
 			this.context = context;
-			this.context.appendChild(this.reflection);
 		}
 	}]);
 
@@ -62,10 +106,12 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Cursor = function () {
-	function Cursor() {
+	function Cursor(editor) {
 		_classCallCheck(this, Cursor);
 
 		this.context;
+		this.editor = editor;
+		this.offset = 0;
 	}
 
 	_createClass(Cursor, [{

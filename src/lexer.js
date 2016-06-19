@@ -103,6 +103,7 @@ export default class Lexer extends Emitter {
 
 		while (lexemes.length > 0) {
 
+			if (lexemes[0] === 'end') break;
 			if (lexemes[0].value.match(/\s+/)) {
 				let lexeme = lexemes.shift();
 				token = new Token('whitespace', lexeme.value, lexeme.offset);
@@ -110,6 +111,7 @@ export default class Lexer extends Emitter {
 				let result = accept.call(this.mode, lexemes);
 				[token, accept] = result;
 			}
+
 			this.emit('token', token);
 			tokens.push(token);
 

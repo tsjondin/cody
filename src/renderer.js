@@ -2,8 +2,9 @@
 
 export default class Renderer {
 
-	constructor () {
+	constructor (editor) {
 		this.context;
+		this.editor = editor;
 	}
 
 	do_render () {

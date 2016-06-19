@@ -5,23 +5,15 @@ import Item from '../src/item';
 
 export default class HTMLRenderer extends Renderer {
 
-	constructor () {
+	constructor (editor) {
 
-		super();
+		super(editor);
 
-		this.container = document.createElement('div');
-		this.container.className = 'cody';
+		this.length_diff = 0;
 
 	}
 
-
-	do_render (item) {
-
-		if (Array.isArray(item.value)) {
-			return item.value.forEach(
-				token => this.do_render(new Item(token))
-			);
-		}
+	get_render (item) {
 
 		let node = document.createElement('span');
 		let classes = item.get_classes();
@@ -32,16 +24,56 @@ export default class HTMLRenderer extends Renderer {
 		);
 
 		node.className = classes.join(' ');
-		node.textContent = item.value;
 
-		this.container.appendChild(node);
+		if (Array.isArray(item.value)) {
+			item.value.map(
+				token => this.get_render(new Item(token))
+			).map(node.appendChild.bind(node));
+		} else {
+			node.textContent = item.value;
+		}
 
+		return node;
+
+	}
+
+	do_render (items) {
+
+		window.requestAnimationFrame(() => {
+
+			let offset = this.editor.cursor.get_offset();
+
+			this.context.innerHTML = "";
+
+			items.forEach(item => {
+				this.context.appendChild(this.get_render(item));
+			});
+
+			if (this.length_diff < 0) {
+				this.editor.cursor.set_offset(offset - this.length_diff);
+			} else {
+				this.editor.cursor.set_offset(offset + this.length_diff);
+			}
+
+		});
 	}
 
 	set_context (context) {
 
+
 		this.context = context;
-		this.context.appendChild(this.container);
+		this.context.className = 'cody';
+
+		let length_down;
+
+		this.context.addEventListener('keydown', () => {
+			length_down = this.context.textContent.length;
+		});
+
+		this.context.addEventListener('keyup', () => {
+			this.length_diff = this.context.textContent.length - length_down;
+			this.editor.do_update(this.context.textContent);
+		});
 
 	}
 

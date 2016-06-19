@@ -26,27 +26,20 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var HTMLRenderer = function (_Renderer) {
 	_inherits(HTMLRenderer, _Renderer);
 
-	function HTMLRenderer() {
+	function HTMLRenderer(editor) {
 		_classCallCheck(this, HTMLRenderer);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(HTMLRenderer).call(this));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(HTMLRenderer).call(this, editor));
 
-		_this.container = document.createElement('div');
-		_this.container.className = 'cody';
+		_this.length_diff = 0;
 
 		return _this;
 	}
 
 	_createClass(HTMLRenderer, [{
-		key: 'do_render',
-		value: function do_render(item) {
+		key: 'get_render',
+		value: function get_render(item) {
 			var _this2 = this;
-
-			if (Array.isArray(item.value)) {
-				return item.value.forEach(function (token) {
-					return _this2.do_render(new _item2.default(token));
-				});
-			}
 
 			var node = document.createElement('span');
 			var classes = item.get_classes();
@@ -57,16 +50,57 @@ var HTMLRenderer = function (_Renderer) {
 			}));
 
 			node.className = classes.join(' ');
-			node.textContent = item.value;
 
-			this.container.appendChild(node);
+			if (Array.isArray(item.value)) {
+				item.value.map(function (token) {
+					return _this2.get_render(new _item2.default(token));
+				}).map(node.appendChild.bind(node));
+			} else {
+				node.textContent = item.value;
+			}
+
+			return node;
+		}
+	}, {
+		key: 'do_render',
+		value: function do_render(items) {
+			var _this3 = this;
+
+			window.requestAnimationFrame(function () {
+
+				var offset = _this3.editor.cursor.get_offset();
+
+				_this3.context.innerHTML = "";
+
+				items.forEach(function (item) {
+					_this3.context.appendChild(_this3.get_render(item));
+				});
+
+				if (_this3.length_diff < 0) {
+					_this3.editor.cursor.set_offset(offset - _this3.length_diff);
+				} else {
+					_this3.editor.cursor.set_offset(offset + _this3.length_diff);
+				}
+			});
 		}
 	}, {
 		key: 'set_context',
 		value: function set_context(context) {
+			var _this4 = this;
 
 			this.context = context;
-			this.context.appendChild(this.container);
+			this.context.className = 'cody';
+
+			var length_down = void 0;
+
+			this.context.addEventListener('keydown', function () {
+				length_down = _this4.context.textContent.length;
+			});
+
+			this.context.addEventListener('keyup', function () {
+				_this4.length_diff = _this4.context.textContent.length - length_down;
+				_this4.editor.do_update(_this4.context.textContent);
+			});
 		}
 	}]);
 
@@ -152,10 +186,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Renderer = function () {
-	function Renderer() {
+	function Renderer(editor) {
 		_classCallCheck(this, Renderer);
 
 		this.context;
+		this.editor = editor;
 	}
 
 	_createClass(Renderer, [{

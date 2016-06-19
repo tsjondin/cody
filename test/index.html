@@ -24,8 +24,13 @@
 
       .cody-invalid {
         color: #996611;
-        border-bottom: 1px dotted #f00;
+        border-bottom: 2px dotted #f00;
       }
+
+      textarea {
+        width: 90%;
+      }
+
     </style>
     <script src="../dist/cody.js"></script>
     <script src="../dist/modes/genericql.js"></script>
@@ -33,7 +38,7 @@
     <script src="../dist/cursors/htmlcursor.js"></script>
   </head>
   <body>
-    <div id="thing"></div>
+    <div id="visual" spellcheck="false" contenteditable="true"></div>
     <script src="./test.js"></script>
   </body>
 </html>

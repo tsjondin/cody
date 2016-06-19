@@ -12,6 +12,23 @@ export default class Mode {
 		this.index;
 	}
 
+	consume (lexemes, condition) {
+
+		let item;
+		let slice = [];
+
+		while (item = lexemes.shift()) {
+			slice.push(item);
+			if (condition(item)) return slice;
+		}
+
+		/**
+		 * The way this occurs is at end-of-stream
+		 */
+		return slice.concat(['end']);
+
+	}
+
 	tokenize (lexeme, list) {
 		return this.get_token('unknown', lexeme);
 	}

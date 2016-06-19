@@ -15,6 +15,10 @@ var _token = require('../src/token');
 
 var _token2 = _interopRequireDefault(_token);
 
+var _lexeme = require('../src/lexeme');
+
+var _lexeme2 = _interopRequireDefault(_lexeme);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -28,21 +32,6 @@ if (!Object.values) {
 		return Object.keys(o).map(function (K) {
 			return o[K];
 		});
-	};
-}
-
-if (!Array.consume) {
-	Array.consume = function (A, C) {
-
-		var item = void 0;
-		var sub = [];
-
-		while (item = A.shift()) {
-			sub.push(item);
-			if (C(item)) break;
-		}
-
-		return sub;
 	};
 }
 
@@ -121,7 +110,7 @@ var GenericQLMode = function (_Mode) {
      * Stream lexemes until we find the end of the string
      */
 				var offset = lexemes[0].offset;
-				var string = [lexemes.shift()].concat(Array.consume(lexemes, function (L) {
+				var string = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
 					return L.value === syntax_map.string;
 				}));
 
@@ -141,7 +130,7 @@ var GenericQLMode = function (_Mode) {
      * stream and then validate the built operator
      */
 				var offset = lexemes[0].offset;
-				var op = Array.consume(lexemes, function (L) {
+				var op = this.consume(lexemes, function (L) {
 					return !operator_lexemes.includes(L.value);
 				});
 				lexemes.unshift(op.pop());
@@ -175,7 +164,7 @@ var GenericQLMode = function (_Mode) {
 		key: 'accept_name',
 		value: function accept_name(lexemes) {
 
-			if (lexemes[0].value.match(/^[\w_][\w\d_]+$/)) {
+			if (lexemes[0].value.match(/^[a-zA-Z_][\w_]+$/)) {
 				var lexeme = lexemes.shift();
 				return [new _token2.default('variable', lexeme.value, lexeme.offset), this.accept_operator];
 			}
@@ -183,9 +172,17 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'accept_number',
 		value: function accept_number(lexemes) {
-			if (lexemes[0].value.match(/^\d+$/)) {
-				var lexeme = lexemes.shift();
-				return [new _token2.default('number', lexeme.value, lexeme.offset), this.accept_conditional_operator];
+			if (lexemes[0].value.match(/\d/)) {
+
+				var offset = lexemes[0].offset;
+				var number = this.consume(lexemes, function (L) {
+					return !L.value.match(/\d/);
+				});
+				lexemes.unshift(number.pop());
+
+				return [new _token2.default('number', number.map(function (L) {
+					return L.value;
+				}).join(''), offset), this.accept_conditional_operator];
 			}
 		}
 	}, {
@@ -195,7 +192,7 @@ var GenericQLMode = function (_Mode) {
 			if (lexemes[0].value === syntax_map.leftparen) {
 
 				var start = lexemes.shift();
-				var block = Array.consume(lexemes, function (L) {
+				var block = this.consume(lexemes, function (L) {
 					return L.value === syntax_map.rightparen;
 				});
 				var end = block.pop();
@@ -221,7 +218,7 @@ var GenericQLMode = function (_Mode) {
 exports.default = GenericQLMode;
 ;
 
-},{"../src/mode":3,"../src/token":4}],2:[function(require,module,exports){
+},{"../src/lexeme":2,"../src/mode":3,"../src/token":4}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -271,6 +268,23 @@ var Mode = function () {
 	}
 
 	_createClass(Mode, [{
+		key: 'consume',
+		value: function consume(lexemes, condition) {
+
+			var item = void 0;
+			var slice = [];
+
+			while (item = lexemes.shift()) {
+				slice.push(item);
+				if (condition(item)) return slice;
+			}
+
+			/**
+    * The way this occurs is at end-of-stream
+    */
+			return slice.concat(['end']);
+		}
+	}, {
 		key: 'tokenize',
 		value: function tokenize(lexeme, list) {
 			return this.get_token('unknown', lexeme);
