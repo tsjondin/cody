@@ -43,11 +43,12 @@ var Cody = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		_this.mode = new options.mode();
 		_this.cursor = new options.cursor();
 		_this.renderer = new options.renderer();
 
-		_this.lexer = new _lexer2.default(_this.mode);
+		_this.lexer = new _lexer2.default();
+		_this.mode = new options.mode(_this.lexer);
+		_this.lexer.set_mode(_this.mode);
 
 		_this.lexer.on('lexeme', function (lexeme) {
 			return _this.emit('lexeme', lexeme);
@@ -99,10 +100,10 @@ var Cody = function (_Emitter) {
 				this.lexemes = this.lexer.scan(stream);
 			}
 
-			var tokens = this.lexer.evaluate(new _arraymutator2.default(this.lexemes).reset());
+			var tokens = this.lexer.evaluate(this.lexemes);
 
 			tokens.forEach(function (token) {
-				var item = new _item2.default(token.type, token.value, token.offset);
+				var item = new _item2.default(token);
 				_this2.emit('item', item);
 				_this2.renderer.do_render(item);
 				return item;
@@ -295,12 +296,12 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Item = function () {
-	function Item(type, value, offset) {
+	function Item(token) {
 		_classCallCheck(this, Item);
 
-		this.type = type;
-		this.value = value;
-		this.offset = offset;
+		this.type = token.type;
+		this.value = token.value;
+		this.offset = token.offset;
 
 		this.classes = [];
 		this.attr = {};
@@ -357,7 +358,7 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Lexeme = function Lexeme(value, offset) {
+var Lexeme = function Lexeme(value, offset, lexemes) {
 	_classCallCheck(this, Lexeme);
 
 	this.value = value;
@@ -372,6 +373,8 @@ exports.default = Lexeme;
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -409,21 +412,26 @@ var Lexer = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Lexer).call(this));
 
-		_this.mode = mode;
+		_this.mode;
 		return _this;
 	}
 
-	/**
-  * Takes a Stream and returns a list of Lexeme's based on lexing rules
-  * defined in the Mode
-  *
-  * @param Stream stream The stream to parse
-  * @param Function callback Called for every Lexeme found in stream
-  * @return Array<Lexeme> lexemes
-  */
-
-
 	_createClass(Lexer, [{
+		key: 'set_mode',
+		value: function set_mode(mode) {
+			this.mode = mode;
+		}
+
+		/**
+   * Takes a Stream and returns a list of Lexeme's based on lexing rules
+   * defined in the Mode
+   *
+   * @param Stream stream The stream to parse
+   * @param Function callback Called for every Lexeme found in stream
+   * @return Array<Lexeme> lexemes
+   */
+
+	}, {
 		key: 'scan',
 		value: function scan(stream, callback) {
 			var _this2 = this;
@@ -482,23 +490,34 @@ var Lexer = function (_Emitter) {
 		}
 
 		/**
-   * Takes an ArrayMutator instance of Lexeme's, likely from the scan, and
+   * Takes a list of  Lexeme's, likely from the scan, and
    * returns a list of Token's
    *
-   * @param ArrayMutator<Lexeme> lexemes
-   * @param Function callback Called for every Token tokenized
+   * @param Array<Lexeme> lexemes
    * @return Array<Token>
    */
 
 	}, {
 		key: 'evaluate',
-		value: function evaluate(lexemes, callback) {
+		value: function evaluate(lexemes) {
 
+			var token = void 0;
 			var tokens = [];
-			var lexeme = void 0;
+			var accept = this.mode.tokenize;
 
-			while (lexeme = lexemes.next()) {
-				var token = this.mode.tokenize(lexeme, lexemes, tokens);
+			while (lexemes.length > 0) {
+
+				if (lexemes[0].value.match(/\s+/)) {
+					var lexeme = lexemes.shift();
+					token = new _token2.default('whitespace', lexeme.value, lexeme.offset);
+				} else {
+					var result = accept.call(this.mode, lexemes);
+
+					var _result = _slicedToArray(result, 2);
+
+					token = _result[0];
+					accept = _result[1];
+				}
 				this.emit('token', token);
 				tokens.push(token);
 			}
@@ -574,16 +593,39 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Token = function () {
-	function Token(type, value, offset) {
+	function Token(type, value, offset, previous) {
 		_classCallCheck(this, Token);
 
-		if (typeof type === 'string') type = [type];
-		this.type = type;
-		this.value = value;
 		this.offset = offset;
+		this.type = [];
+		this.value = value;
+
+		this.set_type(type);
+		this.previous = function () {
+			return previous;
+		};
 	}
 
 	_createClass(Token, [{
+		key: "set_type",
+		value: function set_type(type) {
+			if (typeof type === 'string') type = [type];
+			this.type = type;
+			return this;
+		}
+	}, {
+		key: "add_type",
+		value: function add_type(type) {
+			this.type.push(type);
+			return this;
+		}
+	}, {
+		key: "set_value",
+		value: function set_value(value) {
+			this.value = value;
+			return this;
+		}
+	}, {
 		key: "get_type",
 		value: function get_type() {
 			return this.type;

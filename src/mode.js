@@ -5,7 +5,8 @@ import Token from './token';
 
 export default class Mode {
 
-	constructor () {
+	constructor (lexer) {
+		this.lexer = lexer;
 		this.lexemes = [];
 		this.keywords = [];
 		this.index;

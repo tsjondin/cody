@@ -1,6 +1,7 @@
 "use strict";
 
 import Renderer from '../src/renderer';
+import Item from '../src/item';
 
 export default class HTMLRenderer extends Renderer {
 
@@ -16,6 +17,12 @@ export default class HTMLRenderer extends Renderer {
 
 	do_render (item) {
 
+		if (Array.isArray(item.value)) {
+			return item.value.forEach(
+				token => this.do_render(new Item(token))
+			);
+		}
+
 		let node = document.createElement('span');
 		let classes = item.get_classes();
 
@@ -23,9 +30,10 @@ export default class HTMLRenderer extends Renderer {
 		classes = classes.concat(
 			item.get_type().map(C => ('cody-' + C))
 		);
-		node.className = classes.join(' ');
 
+		node.className = classes.join(' ');
 		node.textContent = item.value;
+
 		this.container.appendChild(node);
 
 	}

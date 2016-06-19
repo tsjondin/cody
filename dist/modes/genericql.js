@@ -11,6 +11,10 @@ var _mode = require('../src/mode');
 
 var _mode2 = _interopRequireDefault(_mode);
 
+var _token = require('../src/token');
+
+var _token2 = _interopRequireDefault(_token);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -27,6 +31,21 @@ if (!Object.values) {
 	};
 }
 
+if (!Array.consume) {
+	Array.consume = function (A, C) {
+
+		var item = void 0;
+		var sub = [];
+
+		while (item = A.shift()) {
+			sub.push(item);
+			if (C(item)) break;
+		}
+
+		return sub;
+	};
+}
+
 var operators = {
 	'equals': '=',
 	'negate': '!',
@@ -36,7 +55,8 @@ var operators = {
 	'lower-than-or-equals': '<=',
 	'higher-than-or-equals': '>=',
 	'regex-match': '~',
-	'not-regex-match': '!~'
+	'not-regex-match': '!~',
+	'dot': '.'
 };
 
 var syntax_map = {
@@ -46,8 +66,7 @@ var syntax_map = {
 	'leftparen': '(',
 	'rightparen': ')',
 	'leftbrace': '{',
-	'rightbrace': '}',
-	'dot': '.'
+	'rightbrace': '}'
 };
 
 var operator_lexemes = Object.keys(operators).reduce(function (ops, K) {
@@ -57,10 +76,10 @@ var operator_lexemes = Object.keys(operators).reduce(function (ops, K) {
 var GenericQLMode = function (_Mode) {
 	_inherits(GenericQLMode, _Mode);
 
-	function GenericQLMode() {
+	function GenericQLMode(lexer) {
 		_classCallCheck(this, GenericQLMode);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GenericQLMode).call(this));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GenericQLMode).call(this, lexer));
 
 		_this.lexemes = Object.keys(syntax_map).map(function (K) {
 			return syntax_map[K];
@@ -73,60 +92,126 @@ var GenericQLMode = function (_Mode) {
 
 	_createClass(GenericQLMode, [{
 		key: 'tokenize',
-		value: function tokenize(lexeme, lexemes, tokens) {
+		value: function tokenize(lexemes) {
+			return this.accept_name(lexemes) || this.accept_block(lexemes) || this.accept_invalid(lexemes);
+		}
+	}, {
+		key: 'accept_value',
+		value: function accept_value(lexemes) {
 
-			var syntax_char = Object.keys(syntax_map).filter(function (K) {
-				return syntax_map[K] === lexeme.value;
-			});
+			var result = void 0;
 
-			if (lexeme.value === syntax_map.string) {
+			if (result = this.accept_string(lexemes)) return result;else if (result = this.accept_number(lexemes)) return result;
+		}
+	}, {
+		key: 'accept_variable',
+		value: function accept_variable(lexemes) {
+
+			var result = void 0;
+
+			if (result = this.accept_name(lexemes)) return result;else if (result = this.accept_value(lexemes)) return result;
+		}
+	}, {
+		key: 'accept_string',
+		value: function accept_string(lexemes) {
+
+			if (lexemes[0].value === syntax_map.string) {
 
 				/**
-     * Stream lexemes until we find the end of the string, then validate that
-     * the string follows an operation
+     * Stream lexemes until we find the end of the string
      */
-
-				var string = this.get_lexeme([lexeme].concat(lexemes.until(function (L) {
+				var offset = lexemes[0].offset;
+				var string = [lexemes.shift()].concat(Array.consume(lexemes, function (L) {
 					return L.value === syntax_map.string;
-				})).map(function (L) {
-					return L.value;
-				}).join(''), lexeme.offset);
+				}));
 
-				if (tokens[tokens.length - 1].get_type().includes('operator')) return this.get_token('string', string);else return this.get_token(['string', 'invalid'], string);
-			} else if (syntax_char.length == 1) {
-				return this.get_token(syntax_char[0], lexeme);
-			} else if (operator_lexemes.includes(lexeme.value)) {
+				return [new _token2.default('string', string.map(function (L) {
+					return L.value;
+				}).join(''), offset), this.accept_conditional_operator];
+			}
+		}
+	}, {
+		key: 'accept_operator',
+		value: function accept_operator(lexemes) {
+
+			if (operator_lexemes.includes(lexemes[0].value)) {
+
 				/**
      * Stream valid operator lexemes until we find one that isn't, backup the
      * stream and then validate the built operator
      */
-				var op = this.get_lexeme([lexeme].concat(lexemes.until(function (L) {
+				var offset = lexemes[0].offset;
+				var op = Array.consume(lexemes, function (L) {
 					return !operator_lexemes.includes(L.value);
-				})).slice(0, -1).map(function (L) {
+				});
+				lexemes.unshift(op.pop());
+
+				var value = op.map(function (L) {
 					return L.value;
-				}).join(''), lexeme.offset);
-
-				lexemes.backward();
-				if (Object.values(operators).includes(op.value)) {
-					return this.get_token(['operator', Object.keys(operators)[Object.values(operators).indexOf(op.value)]], op);
+				}).join('');
+				if (Object.values(operators).includes(value)) {
+					var subtype = Object.keys(operators)[Object.values(operators).indexOf(value)];
+					return [new _token2.default(['operator', subtype], value, offset), this.accept_variable];
 				} else {
-					return this.get_token(['operator', 'invalid'], op);
+					return [new _token2.default(['operator', 'invalid'], value, offset), this.accept_variable];
 				}
-			} else if (this.keywords.includes(lexeme.value)) {
-				return this.get_token('keyword', lexeme);
-			} else if (lexeme.value.match(/^[\w_][\w\d_]+$/)) {
-				return this.get_token('variable', lexeme);
-			} else if (lexeme.value.match(/^\d+$/)) {
-				if (tokens[tokens.length - 1].get_type().includes('operator')) {
-					return this.get_token('number', lexeme);
-				} else {
-					return this.get_token(['number', 'invalid'], lexeme);
-				}
-			} else if (lexeme.value.match(/^\s+$/)) {
-				return this.get_token('whitespace', lexeme);
 			}
+		}
+	}, {
+		key: 'accept_conditional_operator',
+		value: function accept_conditional_operator(lexemes) {
 
-			return this.get_token('invalid', lexeme);
+			if (this.keywords.includes(lexemes[0].value)) {
+				var lexeme = lexemes.shift();
+				return [new _token2.default(['operator', lexeme.value], lexeme.value, lexeme.offset), this.accept_expression];
+			}
+		}
+	}, {
+		key: 'accept_expression',
+		value: function accept_expression(lexemes) {
+			return this.accept_name(lexemes) || this.accept_block(lexemes) || this.accept_invalid(lexemes);
+		}
+	}, {
+		key: 'accept_name',
+		value: function accept_name(lexemes) {
+
+			if (lexemes[0].value.match(/^[\w_][\w\d_]+$/)) {
+				var lexeme = lexemes.shift();
+				return [new _token2.default('variable', lexeme.value, lexeme.offset), this.accept_operator];
+			}
+		}
+	}, {
+		key: 'accept_number',
+		value: function accept_number(lexemes) {
+			if (lexemes[0].value.match(/^\d+$/)) {
+				var lexeme = lexemes.shift();
+				return [new _token2.default('number', lexeme.value, lexeme.offset), this.accept_conditional_operator];
+			}
+		}
+	}, {
+		key: 'accept_block',
+		value: function accept_block(lexemes) {
+
+			if (lexemes[0].value === syntax_map.leftparen) {
+
+				var start = lexemes.shift();
+				var block = Array.consume(lexemes, function (L) {
+					return L.value === syntax_map.rightparen;
+				});
+				var end = block.pop();
+
+				var tokens = this.lexer.evaluate(block);
+				tokens.push(new _token2.default(['operator', 'rightparen'], end.value, end.offset));
+				tokens.unshift(new _token2.default(['operator', 'leftparen'], start.value, start.offset));
+
+				return [new _token2.default('block', tokens, start.offset), this.accept_conditional_operator];
+			}
+		}
+	}, {
+		key: 'accept_invalid',
+		value: function accept_invalid(lexemes) {
+			var lexeme = lexemes.shift();
+			return [new _token2.default('invalid', lexeme.value, lexeme.offset), this.tokenize];
 		}
 	}]);
 
@@ -136,7 +221,7 @@ var GenericQLMode = function (_Mode) {
 exports.default = GenericQLMode;
 ;
 
-},{"../src/mode":3}],2:[function(require,module,exports){
+},{"../src/mode":3,"../src/token":4}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -145,7 +230,7 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Lexeme = function Lexeme(value, offset) {
+var Lexeme = function Lexeme(value, offset, lexemes) {
 	_classCallCheck(this, Lexeme);
 
 	this.value = value;
@@ -176,9 +261,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Mode = function () {
-	function Mode() {
+	function Mode(lexer) {
 		_classCallCheck(this, Mode);
 
+		this.lexer = lexer;
 		this.lexemes = [];
 		this.keywords = [];
 		this.index;
@@ -228,16 +314,39 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Token = function () {
-	function Token(type, value, offset) {
+	function Token(type, value, offset, previous) {
 		_classCallCheck(this, Token);
 
-		if (typeof type === 'string') type = [type];
-		this.type = type;
-		this.value = value;
 		this.offset = offset;
+		this.type = [];
+		this.value = value;
+
+		this.set_type(type);
+		this.previous = function () {
+			return previous;
+		};
 	}
 
 	_createClass(Token, [{
+		key: "set_type",
+		value: function set_type(type) {
+			if (typeof type === 'string') type = [type];
+			this.type = type;
+			return this;
+		}
+	}, {
+		key: "add_type",
+		value: function add_type(type) {
+			this.type.push(type);
+			return this;
+		}
+	}, {
+		key: "set_value",
+		value: function set_value(value) {
+			this.value = value;
+			return this;
+		}
+	}, {
 		key: "get_type",
 		value: function get_type() {
 			return this.type;

@@ -13,11 +13,12 @@ class Cody extends Emitter {
 
 		super();
 
-		this.mode = new options.mode();
 		this.cursor = new options.cursor();
 		this.renderer = new options.renderer();
 
-		this.lexer = new Lexer(this.mode);
+		this.lexer = new Lexer();
+		this.mode = new options.mode(this.lexer);
+		this.lexer.set_mode(this.mode);
 
 		this.lexer.on('lexeme', lexeme => this.emit('lexeme', lexeme));
 		this.lexer.on('token', token => this.emit('token', token));
@@ -63,12 +64,10 @@ class Cody extends Emitter {
 			this.lexemes = this.lexer.scan(stream);
 		}
 
-		let tokens = this.lexer.evaluate(
-			(new ArrayMutator(this.lexemes)).reset()
-		);
+		let tokens = this.lexer.evaluate(this.lexemes);
 
 		tokens.forEach(token => {
-			let item = new Item(token.type, token.value, token.offset);
+			let item = new Item(token);
 			this.emit('item', item);
 			this.renderer.do_render(item);
 			return item;

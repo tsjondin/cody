@@ -2,9 +2,11 @@
 
 export default class Lexeme {
 
-	constructor (value, offset)  {
+	constructor (value, offset, lexemes)  {
+
 		this.value = value;
 		this.offset = offset
+
 	}
 
 }

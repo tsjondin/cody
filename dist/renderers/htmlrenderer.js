@@ -11,6 +11,10 @@ var _renderer = require('../src/renderer');
 
 var _renderer2 = _interopRequireDefault(_renderer);
 
+var _item = require('../src/item');
+
+var _item2 = _interopRequireDefault(_item);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -36,6 +40,13 @@ var HTMLRenderer = function (_Renderer) {
 	_createClass(HTMLRenderer, [{
 		key: 'do_render',
 		value: function do_render(item) {
+			var _this2 = this;
+
+			if (Array.isArray(item.value)) {
+				return item.value.forEach(function (token) {
+					return _this2.do_render(new _item2.default(token));
+				});
+			}
 
 			var node = document.createElement('span');
 			var classes = item.get_classes();
@@ -44,9 +55,10 @@ var HTMLRenderer = function (_Renderer) {
 			classes = classes.concat(item.get_type().map(function (C) {
 				return 'cody-' + C;
 			}));
-			node.className = classes.join(' ');
 
+			node.className = classes.join(' ');
 			node.textContent = item.value;
+
 			this.container.appendChild(node);
 		}
 	}, {
@@ -63,7 +75,72 @@ var HTMLRenderer = function (_Renderer) {
 
 exports.default = HTMLRenderer;
 
-},{"../src/renderer":2}],2:[function(require,module,exports){
+},{"../src/item":2,"../src/renderer":3}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Item = function () {
+	function Item(token) {
+		_classCallCheck(this, Item);
+
+		this.type = token.type;
+		this.value = token.value;
+		this.offset = token.offset;
+
+		this.classes = [];
+		this.attr = {};
+	}
+
+	_createClass(Item, [{
+		key: "set_attribute",
+		value: function set_attribute(key, value) {
+			if (typeof value === 'undefined') delete this.attr[key];else this.attr[key] = value;
+			return this;
+		}
+	}, {
+		key: "get_attribute",
+		value: function get_attribute(key) {
+			return this.attr[key];
+		}
+	}, {
+		key: "get_type",
+		value: function get_type() {
+			return this.type;
+		}
+	}, {
+		key: "add_class",
+		value: function add_class(name) {
+			if (!this.classes.includes(name)) this.classes.push(name);
+			return this;
+		}
+	}, {
+		key: "remove_class",
+		value: function remove_class(name) {
+			this.classes = this.classes.filter(function (C) {
+				return C != name;
+			});
+			return this;
+		}
+	}, {
+		key: "get_classes",
+		value: function get_classes() {
+			return this.classes.slice(0);
+		}
+	}]);
+
+	return Item;
+}();
+
+exports.default = Item;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

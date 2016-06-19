@@ -1,9 +1,26 @@
 "use strict";
 
 import Mode from '../src/mode';
+import Token from '../src/token';
 
 if (!Object.values) {
 	Object.values = (o) => Object.keys(o).map(K => o[K]);
+}
+
+if (!Array.consume) {
+	Array.consume = (A, C) => {
+
+		let item;
+		let sub = [];
+
+		while (item = A.shift()) {
+			sub.push(item);
+			if (C(item)) break;
+		}
+
+		return sub;
+
+	};
 }
 
 const operators = {
@@ -15,7 +32,8 @@ const operators = {
 	'lower-than-or-equals': '<=',
 	'higher-than-or-equals': '>=',
 	'regex-match': '~',
-	'not-regex-match': '!~'
+	'not-regex-match': '!~',
+	'dot': '.'
 };
 
 const syntax_map = {
@@ -25,8 +43,7 @@ const syntax_map = {
 	'leftparen': '(',
 	'rightparen': ')',
 	'leftbrace': '{',
-	'rightbrace': '}',
-	'dot': '.'
+	'rightbrace': '}'
 };
 
 const operator_lexemes = Object.keys(operators)
@@ -34,9 +51,9 @@ const operator_lexemes = Object.keys(operators)
 
 export default class GenericQLMode extends Mode {
 
-	constructor () {
+	constructor (lexer) {
 
-		super();
+		super(lexer);
 
 		this.lexemes = Object.keys(syntax_map)
 			.map(K => (syntax_map[K]))
@@ -48,68 +65,143 @@ export default class GenericQLMode extends Mode {
 
 	}
 
-	tokenize (lexeme, lexemes, tokens) {
+	tokenize (lexemes) {
+		return (this.accept_name(lexemes) || this.accept_block(lexemes) || this.accept_invalid(lexemes));
+	}
 
-		let syntax_char = Object.keys(syntax_map)
-			.filter(K => (syntax_map[K] === lexeme.value));
+	accept_value (lexemes) {
 
-		if (lexeme.value === syntax_map.string) {
+		let result;
+
+		if (result = this.accept_string(lexemes)) return result;
+		else if (result = this.accept_number(lexemes)) return result;
+
+	}
+
+	accept_variable (lexemes) {
+
+		let result;
+
+		if (result = this.accept_name(lexemes)) return result;
+		else if (result = this.accept_value(lexemes)) return result;
+
+	}
+
+	accept_string (lexemes) {
+
+		if (lexemes[0].value === syntax_map.string) {
 
 			/**
-			 * Stream lexemes until we find the end of the string, then validate that
-			 * the string follows an operation
+			 * Stream lexemes until we find the end of the string
 			 */
-
-			let string = this.get_lexeme(
-				[lexeme].concat(
-					lexemes.until(
-						L => (L.value === syntax_map.string)
-					)
-				).map(L => L.value).join(''),
-					lexeme.offset
+			let offset = lexemes[0].offset;
+			let string = [lexemes.shift()].concat(
+				Array.consume(lexemes, (L) => (L.value === syntax_map.string))
 			);
 
-			if (tokens[tokens.length - 1].get_type().includes('operator'))
-				return this.get_token('string', string);
-			else return this.get_token(['string', 'invalid'], string);
+			return [
+				new Token('string', string.map(L => L.value).join(''), offset),
+				this.accept_conditional_operator
+			];
 
-		} else if (syntax_char.length == 1) {
-			return this.get_token(syntax_char[0], lexeme);
-		} else if (operator_lexemes.includes(lexeme.value)) {
+		}
+
+	}
+
+	accept_operator (lexemes) {
+
+		if (operator_lexemes.includes(lexemes[0].value)) {
+
 			/**
 			 * Stream valid operator lexemes until we find one that isn't, backup the
 			 * stream and then validate the built operator
 			 */
-			let op = this.get_lexeme(
-				[lexeme].concat(lexemes.until(
-					L => (!operator_lexemes.includes(L.value))
-				)).slice(0, -1).map(L => L.value).join(''),
-					lexeme.offset
-			);
+			let offset = lexemes[0].offset;
+			let op = Array.consume(lexemes, L => (!operator_lexemes.includes(L.value)));
+			lexemes.unshift(op.pop());
 
-			lexemes.backward();
-			if (Object.values(operators).includes(op.value)) {
-				return this.get_token(['operator', Object.keys(operators)[Object.values(operators).indexOf(op.value)]], op);
+			let value = op.map(L => L.value).join('');
+			if (Object.values(operators).includes(value)) {
+				let subtype = Object.keys(operators)[Object.values(operators).indexOf(value)];
+				return [
+					new Token(['operator', subtype], value, offset),
+					this.accept_variable
+				];
 			} else {
-				return this.get_token(['operator', 'invalid'], op);
+				return [
+					new Token(['operator', 'invalid'], value, offset),
+					this.accept_variable
+				];
 			}
 
-		} else if (this.keywords.includes(lexeme.value)) {
-			return this.get_token('keyword', lexeme);
-		} else if (lexeme.value.match(/^[\w_][\w\d_]+$/)) {
-			return this.get_token('variable', lexeme);
-		} else if (lexeme.value.match(/^\d+$/)) {
-			if (tokens[tokens.length - 1].get_type().includes('operator')) {
-				return this.get_token('number', lexeme);
-			} else {
-				return this.get_token(['number', 'invalid'], lexeme);
-			}
-		} else if (lexeme.value.match(/^\s+$/)) {
-			return this.get_token('whitespace', lexeme);
 		}
 
-		return this.get_token('invalid', lexeme);
+	}
 
+	accept_conditional_operator (lexemes) {
+
+		if (this.keywords.includes(lexemes[0].value)) {
+			let lexeme = lexemes.shift();
+			return [
+				new Token(['operator', lexeme.value], lexeme.value, lexeme.offset),
+				this.accept_expression
+			];
+		}
+
+	}
+
+	accept_expression (lexemes) {
+		return this.accept_name(lexemes) || this.accept_block(lexemes) || this.accept_invalid(lexemes);
+	}
+
+	accept_name (lexemes) {
+
+		if (lexemes[0].value.match(/^[\w_][\w\d_]+$/)) {
+			let lexeme = lexemes.shift();
+			return [
+				new Token('variable', lexeme.value, lexeme.offset),
+				this.accept_operator
+			];
+		}
+
+	}
+
+	accept_number (lexemes) {
+		if (lexemes[0].value.match(/^\d+$/)) {
+			let lexeme = lexemes.shift();
+			return [
+				new Token('number', lexeme.value, lexeme.offset),
+				this.accept_conditional_operator
+			];
+		}
+	}
+
+	accept_block (lexemes) {
+
+		if (lexemes[0].value === syntax_map.leftparen) {
+
+			let start = lexemes.shift();
+			let block = Array.consume(lexemes, (L) => (L.value === syntax_map.rightparen));
+			let end = block.pop();
+
+			let tokens = this.lexer.evaluate(block);
+			tokens.push(new Token(['operator', 'rightparen'], end.value, end.offset));
+			tokens.unshift(new Token(['operator', 'leftparen'], start.value, start.offset));
+
+			return [
+				new Token('block', tokens, start.offset),
+				this.accept_conditional_operator
+			]
+		}
+
+	}
+
+	accept_invalid (lexemes) {
+		let lexeme = lexemes.shift();
+		return [
+			new Token('invalid', lexeme.value, lexeme.offset),
+			this.tokenize
+		];
 	}
 
 };

@@ -2,11 +2,11 @@
 
 export default class Item {
 
-	constructor (type, value, offset) {
+	constructor (token) {
 
-		this.type = type;
-		this.value = value;
-		this.offset = offset;
+		this.type = token.type;
+		this.value = token.value;
+		this.offset = token.offset;
 
 		this.classes = [];
 		this.attr = {};
