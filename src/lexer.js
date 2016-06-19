@@ -98,7 +98,7 @@ export default class Lexer extends Emitter {
 		let lexeme;
 
 		while (lexeme = lexemes.next()) {
-			let token = this.mode.tokenize(lexeme, lexemes);
+			let token = this.mode.tokenize(lexeme, lexemes, tokens);
 			this.emit('token', token);
 			tokens.push(token);
 		}

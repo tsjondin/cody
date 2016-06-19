@@ -4,12 +4,17 @@ export default class ArrayMutator {
 
 	constructor (array) {
 
-		let pointer = -1;
+		let pointer = array.length - 1;
 
 		this.position = () => pointer;
 		this.move = position => (pointer = position);
 		this.get = index => array[index];
 		this.insert = value => array.splice(pointer, 0, value);
+
+		this.push = value => {
+			array.push(value);
+			this.move(array.length - 1);
+		};
 
 	}
 
@@ -31,6 +36,10 @@ export default class ArrayMutator {
 	next () {
 		this.forward();
 		return this.current();
+	}
+
+	last () {
+		return this.get(this.position() - 1);
 	}
 
 	current () {

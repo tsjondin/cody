@@ -99,10 +99,10 @@ var Cody = function (_Emitter) {
 				this.lexemes = this.lexer.scan(stream);
 			}
 
-			var tokens = this.lexer.evaluate(new _arraymutator2.default(this.lexemes));
+			var tokens = this.lexer.evaluate(new _arraymutator2.default(this.lexemes).reset());
 
-			var items = tokens.map(function (T) {
-				var item = new _item2.default(T.type, T.value, T.offset);
+			tokens.forEach(function (token) {
+				var item = new _item2.default(token.type, token.value, token.offset);
 				_this2.emit('item', item);
 				_this2.renderer.do_render(item);
 				return item;
@@ -133,9 +133,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var ArrayMutator = function () {
 	function ArrayMutator(array) {
+		var _this = this;
+
 		_classCallCheck(this, ArrayMutator);
 
-		var pointer = -1;
+		var pointer = array.length - 1;
 
 		this.position = function () {
 			return pointer;
@@ -148,6 +150,11 @@ var ArrayMutator = function () {
 		};
 		this.insert = function (value) {
 			return array.splice(pointer, 0, value);
+		};
+
+		this.push = function (value) {
+			array.push(value);
+			_this.move(array.length - 1);
 		};
 	}
 
@@ -174,6 +181,11 @@ var ArrayMutator = function () {
 		value: function next() {
 			this.forward();
 			return this.current();
+		}
+	}, {
+		key: "last",
+		value: function last() {
+			return this.get(this.position() - 1);
 		}
 	}, {
 		key: "current",
@@ -486,7 +498,7 @@ var Lexer = function (_Emitter) {
 			var lexeme = void 0;
 
 			while (lexeme = lexemes.next()) {
-				var token = this.mode.tokenize(lexeme, lexemes);
+				var token = this.mode.tokenize(lexeme, lexemes, tokens);
 				this.emit('token', token);
 				tokens.push(token);
 			}
@@ -557,15 +569,39 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Token = function Token(type, value, offset) {
-	_classCallCheck(this, Token);
+var Token = function () {
+	function Token(type, value, offset) {
+		_classCallCheck(this, Token);
 
-	this.type = type;
-	this.value = value;
-	this.offset = offset;
-};
+		if (typeof type === 'string') type = [type];
+		this.type = type;
+		this.value = value;
+		this.offset = offset;
+	}
+
+	_createClass(Token, [{
+		key: "get_type",
+		value: function get_type() {
+			return this.type;
+		}
+	}, {
+		key: "get_value",
+		value: function get_value() {
+			return this.value;
+		}
+	}, {
+		key: "get_offset",
+		value: function get_offset() {
+			return this.offset;
+		}
+	}]);
+
+	return Token;
+}();
 
 exports.default = Token;
 

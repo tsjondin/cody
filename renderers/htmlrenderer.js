@@ -19,7 +19,10 @@ export default class HTMLRenderer extends Renderer {
 		let node = document.createElement('span');
 		let classes = item.get_classes();
 
-		classes.unshift('cody-item-' + item.get_type());
+		classes.unshift('cody-item');
+		classes = classes.concat(
+			item.get_type().map(C => ('cody-' + C))
+		);
 		node.className = classes.join(' ');
 
 		node.textContent = item.value;

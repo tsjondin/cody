@@ -64,11 +64,11 @@ class Cody extends Emitter {
 		}
 
 		let tokens = this.lexer.evaluate(
-			new ArrayMutator(this.lexemes)
+			(new ArrayMutator(this.lexemes)).reset()
 		);
 
-		let items = tokens.map(T => {
-			let item = new Item(T.type, T.value, T.offset);
+		tokens.forEach(token => {
+			let item = new Item(token.type, token.value, token.offset);
 			this.emit('item', item);
 			this.renderer.do_render(item);
 			return item;

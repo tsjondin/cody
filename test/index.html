@@ -6,16 +6,25 @@
         font-family: monospace;
       }
 
-      .cody *[class^="cody-item-"] {
+      .cody-item {
         white-space: pre;
       }
 
-      .cody .cody-item-keyword {
+      .cody-string {
+        color: #228833;
+      }
+
+      .cody-keyword {
         color: #3399bb;
       }
 
-      .cody .cody-item-number {
+      .cody-number {
         color: #996611;
+      }
+
+      .cody-invalid {
+        color: #996611;
+        border-bottom: 1px dotted #f00;
       }
     </style>
     <script src="../dist/cody.js"></script>

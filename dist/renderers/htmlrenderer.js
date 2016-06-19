@@ -40,7 +40,10 @@ var HTMLRenderer = function (_Renderer) {
 			var node = document.createElement('span');
 			var classes = item.get_classes();
 
-			classes.unshift('cody-item-' + item.get_type());
+			classes.unshift('cody-item');
+			classes = classes.concat(item.get_type().map(function (C) {
+				return 'cody-' + C;
+			}));
 			node.className = classes.join(' ');
 
 			node.textContent = item.value;
