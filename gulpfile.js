@@ -19,9 +19,9 @@ gulp.task('cursors', function () {
 		}
 
 		browserify(src_path, {
-			standalone: cursor.replace('.js', '')
+			standalone: 'Cody.Cursors.' + cursor.replace('.js', '')
 		})
-			.transform("babelify")
+			.transform("babelify", {presets: ["es2015"]})
 			.bundle()
 			.pipe(fs.createWriteStream(target_path));
 
@@ -44,7 +44,7 @@ gulp.task('renderers', function () {
 		}
 
 		browserify(src_path, {
-			standalone: renderer.replace('.js', '')
+			standalone: 'Cody.Renderers.' + renderer.replace('.js', '')
 		})
 			.transform("babelify", {presets: ["es2015"]})
 			.bundle()
@@ -68,7 +68,9 @@ gulp.task('modes', function () {
 			fs.mkdirSync(target_dir);
 		}
 
-		browserify(src_path)
+		browserify(src_path, {
+			standalone: 'Cody.Modes.' + mode.replace('.js', '')
+		})
 			.transform("babelify", {presets: ["es2015"]})
 			.bundle()
 			.pipe(fs.createWriteStream(target_path));
@@ -78,7 +80,9 @@ gulp.task('modes', function () {
 
 gulp.task('core', function () {
 
-	browserify("./index.js")
+	browserify("./index.js", {
+		standalone: 'Cody'
+	})
 		.transform("babelify", {presets: ["es2015"]})
 		.bundle()
 		.pipe(fs.createWriteStream("./dist/cody.js"));

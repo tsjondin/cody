@@ -1,9 +1,9 @@
 "use strict";
 
-var editor = new Cody({
-	mode: GenericQLMode,
-	cursor: htmlcursor.default,
-	renderer: htmlrenderer.default,
+var editor = new Cody.default({
+	mode: Cody.Modes.genericql.default,
+	cursor: Cody.Cursors.htmlcursor.default,
+	renderer: Cody.Renderers.htmlrenderer.default,
 	context: document.getElementById('thing')
 });
 

@@ -20,3 +20,4 @@ export default class HTMLCursor extends Cursor {
 	}
 
 }
+

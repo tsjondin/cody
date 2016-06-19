@@ -80,8 +80,7 @@ class Cody extends Emitter {
 
 }
 
-if (global) {
-	global.Cody = Cody;
-} else if (window) {
-	window.Cody = Cody;
-}
+Cody.Renderers = {};
+Cody.Cursors = {};
+
+export default Cody;
