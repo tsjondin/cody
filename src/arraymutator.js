@@ -43,7 +43,10 @@ export default class ArrayMutator {
 			let item;
 
 			while (item = this.next()) {
-				if (condition(item)) break;
+				if (condition(item)) {
+					sublist.push(item);
+					break;
+				}
 				sublist.push(item);
 			}
 

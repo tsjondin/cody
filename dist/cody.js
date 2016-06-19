@@ -188,7 +188,10 @@ var ArrayMutator = function () {
 			var item = void 0;
 
 			while (item = this.next()) {
-				if (condition(item)) break;
+				if (condition(item)) {
+					sublist.push(item);
+					break;
+				}
 				sublist.push(item);
 			}
 

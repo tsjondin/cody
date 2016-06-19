@@ -62,15 +62,15 @@ var GenericQLMode = function (_Mode) {
 		value: function tokenize(lexeme, buffer, index) {
 
 			if (lexeme.value === '[') return this.get_token('l_bracket', lexeme);else if (lexeme.value === ']') return this.get_token('r_bracket', lexeme);else if (lexeme.value === '(') return this.get_token('l_paren', lexeme);else if (lexeme.value === ')') return this.get_token('r_paren', lexeme);else if (lexeme.value === '{') return this.get_token('l_brace', lexeme);else if (lexeme.value === '}') return this.get_token('r_brace', lexeme);else if (lexeme.value === '.') return this.get_token('dot', lexeme.value, lexeme.offset);else if (lexeme.value === lexeme_map.STRING_DELIM) {
-				return this.get_token('string', this.get_lexeme(buffer.until(function (L) {
+				return this.get_token('string', this.get_lexeme([lexeme].concat(buffer.until(function (L) {
 					return L.value === lexeme_map.STRING_DELIM;
-				}).map(function (L) {
+				})).map(function (L) {
 					return L.value;
 				}).join(''), lexeme.offset));
 			} else if (operators.includes(lexeme.value)) {
 				var token = this.get_token('operator', this.get_lexeme([lexeme].concat(buffer.until(function (L) {
 					return !operators.includes(L.value);
-				})).map(function (L) {
+				})).slice(0, -1).map(function (L) {
 					return L.value;
 				}).join(''), lexeme.offset));
 				buffer.backward();

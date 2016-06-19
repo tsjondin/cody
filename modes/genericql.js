@@ -56,8 +56,10 @@ export default class GenericQLMode extends Mode {
 			return this.get_token(
 				'string',
 				this.get_lexeme(
-					buffer.until(
-						L => (L.value === lexeme_map.STRING_DELIM)
+					[lexeme].concat(
+						buffer.until(
+							L => (L.value === lexeme_map.STRING_DELIM)
+						)
 					).map(L => L.value).join(''),
 					lexeme.offset
 				)
@@ -68,7 +70,7 @@ export default class GenericQLMode extends Mode {
 				this.get_lexeme(
 					[lexeme].concat(buffer.until(
 						L => (!operators.includes(L.value))
-					)).map(L => L.value).join(''),
+					)).slice(0, -1).map(L => L.value).join(''),
 					lexeme.offset
 				)
 			);
