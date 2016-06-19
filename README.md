@@ -1,13 +1,30 @@
+#!! THIS PROJECT IS FAR FROM USABLE AT THIS MOMENT !!
+
+What is needed before this could possibly work
+
+- [ ] Implement the HTMLCursor
+- [ ] Fix the offset designation during scanning
+- [ ] Fix the standalone (modes/renderers/cursor) module handling, standalone does not play very nice with es6 default exports
+- [ ] Implement line handling (possibly through an ephemeral Line object, implicit linebreak lexeme/token?)
+
 #Cody
 
-Used to create code highlight, hinting, autocompletion and more on you site. It
-was built to be used in tandem with filter DSL's that may be used in
-large/complex products.
+Used to create code highlight, hinting, autocompletion and more in primarily a
+HTML context. It was built to be used in tandem with filter DSL's that may be
+used in large/complex products.
 
 ## Getting started
 
-	var editor = new Cody({mode: GenericQueryLanguageMode});
-	editor.set_input(document.getElementById('myEditor'));
+	var editor = new Cody({
+		mode: GenericQueryLanguageMode
+		cursor: Cody.Cursors.HTMLCursor
+		renderer: Cody.Renderers.HTLMRenderer
+	});
+
+	var context = document.getElementById('myEditor');
+
+	editor.renderer.set_context(context);
+	editor.cursor.set_context(context);
 
 ## Public Interfaces
 
