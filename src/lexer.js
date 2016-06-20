@@ -109,7 +109,13 @@ export default class Lexer extends Emitter {
 				token = new Token('whitespace', lexeme.value, lexeme.offset);
 			} else {
 				let result = accept.call(this.mode, lexemes);
-				[token, accept] = result;
+				if (result) {
+					[token, accept] = result;
+				} else {
+					let lexeme = lexemes.shift();
+					token = new Token('invalid', lexeme.value, lexeme.offset);
+					accept = this.mode.tokenize;
+				}
 			}
 
 			this.emit('token', token);

@@ -392,9 +392,9 @@ var _token = require('./token');
 
 var _token2 = _interopRequireDefault(_token);
 
-var _lexeme = require('./lexeme');
+var _lexeme2 = require('./lexeme');
 
-var _lexeme2 = _interopRequireDefault(_lexeme);
+var _lexeme3 = _interopRequireDefault(_lexeme2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -449,7 +449,7 @@ var Lexer = function (_Emitter) {
 			var lexemes = [];
 
 			var new_lexeme = function new_lexeme(value, stream) {
-				var L = new _lexeme2.default(value, stream.position - value.length + 1);
+				var L = new _lexeme3.default(value, stream.position - value.length + 1);
 				_this2.emit('lexeme', L);
 				return L;
 			};
@@ -519,11 +519,16 @@ var Lexer = function (_Emitter) {
 					token = new _token2.default('whitespace', lexeme.value, lexeme.offset);
 				} else {
 					var result = accept.call(this.mode, lexemes);
+					if (result) {
+						var _result = _slicedToArray(result, 2);
 
-					var _result = _slicedToArray(result, 2);
-
-					token = _result[0];
-					accept = _result[1];
+						token = _result[0];
+						accept = _result[1];
+					} else {
+						var _lexeme = lexemes.shift();
+						token = new _token2.default('invalid', _lexeme.value, _lexeme.offset);
+						accept = this.mode.tokenize;
+					}
 				}
 
 				this.emit('token', token);

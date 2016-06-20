@@ -172,11 +172,11 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'accept_number',
 		value: function accept_number(lexemes) {
-			if (lexemes[0].value.match(/\d/)) {
+			if (lexemes[0].value.match(/^\d$/)) {
 
 				var offset = lexemes[0].offset;
 				var number = this.consume(lexemes, function (L) {
-					return !L.value.match(/\d/);
+					return !L.value.match(/^\d$/);
 				});
 				lexemes.unshift(number.pop());
 

@@ -152,10 +152,10 @@ export default class GenericQLMode extends Mode {
 	}
 
 	accept_number (lexemes) {
-		if (lexemes[0].value.match(/\d/)) {
+		if (lexemes[0].value.match(/^\d$/)) {
 
 			let offset = lexemes[0].offset;
-			let number = this.consume(lexemes, L => (!L.value.match(/\d/)));
+			let number = this.consume(lexemes, L => (!L.value.match(/^\d$/)));
 			lexemes.unshift(number.pop());
 
 			return [
@@ -180,7 +180,7 @@ export default class GenericQLMode extends Mode {
 			return [
 				new Token('block', tokens, start.offset),
 				this.accept_conditional_operator
-			]
+			];
 		}
 
 	}
