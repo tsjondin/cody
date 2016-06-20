@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _lexer = require('./src/lexer');
@@ -43,12 +45,12 @@ var Cody = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		_this.cursor = new options.cursor(_this);
-		_this.renderer = new options.renderer(_this);
+		if (!(options.mode instanceof Mode)) throw new Error('Cody cannot operate without a Mode');else if (!(options.context.class instanceof Context)) throw new Error('Cody cannot operate without a Context');
 
-		_this.lexer = new _lexer2.default();
-		_this.mode = new options.mode(_this.lexer);
-		_this.lexer.set_mode(_this.mode);
+		_this.context = new options.context.class(_this, options.context.options);
+		_this.mode = options.mode.class(options.mode.options);
+
+		_this.lexer = new _lexer2.default(_this.mode);
 
 		_this.lexer.on('lexeme', function (lexeme) {
 			return _this.emit('lexeme', lexeme);
@@ -56,9 +58,9 @@ var Cody = function (_Emitter) {
 		_this.lexer.on('token', function (token) {
 			return _this.emit('token', token);
 		});
-
-		_this.cursor.set_context(options.context);
-		_this.renderer.set_context(options.context);
+		_this.lexer.on('error', function (token) {
+			return _this.emit('error', token);
+		});
 
 		_this.stream = new _stream2.default("");
 		_this.lexemes = [];
@@ -103,18 +105,30 @@ var Cody = function (_Emitter) {
 			var items = [];
 
 			try {
-				var tokens = this.lexer.evaluate(this.lexemes);
+				var _lexer$evaluate = this.lexer.evaluate(this.lexemes);
+
+				var _lexer$evaluate2 = _slicedToArray(_lexer$evaluate, 2);
+
+				var tokens = _lexer$evaluate2[0];
+				var issues = _lexer$evaluate2[1];
+
+
 				items = tokens.map(function (token) {
 					var item = new _item2.default(token);
 					_this2.emit('item', item);
 					return item;
 				});
-				this.emit('success');
+
+				if (issues.length > 0) {
+					this.emit('invalid', issues);
+				} else {
+					this.emit('valid');
+				}
 			} catch (e) {
 				this.emit('error', e);
 			}
 
-			this.renderer.do_render(items);
+			this.context.do_render(items);
 			return this;
 		}
 	}]);
@@ -122,9 +136,7 @@ var Cody = function (_Emitter) {
 	return Cody;
 }(_emitter2.default);
 
-Cody.Renderers = {};
-Cody.Cursors = {};
-
+Cody.Contexts = {};
 exports.default = Cody;
 
 },{"./src/arraymutator":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/stream":7}],2:[function(require,module,exports){
@@ -392,9 +404,9 @@ var _token = require('./token');
 
 var _token2 = _interopRequireDefault(_token);
 
-var _lexeme2 = require('./lexeme');
+var _lexeme = require('./lexeme');
 
-var _lexeme3 = _interopRequireDefault(_lexeme2);
+var _lexeme2 = _interopRequireDefault(_lexeme);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -418,26 +430,21 @@ var Lexer = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Lexer).call(this));
 
-		_this.mode;
+		_this.mode = mode;
 		return _this;
 	}
 
+	/**
+  * Takes a Stream and returns a list of Lexeme's based on lexing rules
+  * defined in the Mode
+  *
+  * @param Stream stream The stream to parse
+  * @param Function callback Called for every Lexeme found in stream
+  * @return Array<Lexeme> lexemes
+  */
+
+
 	_createClass(Lexer, [{
-		key: 'set_mode',
-		value: function set_mode(mode) {
-			this.mode = mode;
-		}
-
-		/**
-   * Takes a Stream and returns a list of Lexeme's based on lexing rules
-   * defined in the Mode
-   *
-   * @param Stream stream The stream to parse
-   * @param Function callback Called for every Lexeme found in stream
-   * @return Array<Lexeme> lexemes
-   */
-
-	}, {
 		key: 'scan',
 		value: function scan(stream, callback) {
 			var _this2 = this;
@@ -449,7 +456,7 @@ var Lexer = function (_Emitter) {
 			var lexemes = [];
 
 			var new_lexeme = function new_lexeme(value, stream) {
-				var L = new _lexeme3.default(value, stream.position - value.length + 1);
+				var L = new _lexeme2.default(value, stream.position - value.length + 1);
 				_this2.emit('lexeme', L);
 				return L;
 			};
@@ -499,8 +506,8 @@ var Lexer = function (_Emitter) {
    * Takes a list of  Lexeme's, likely from the scan, and
    * returns a list of Token's
    *
-   * @param Array<Lexeme> lexemes
-   * @return Array<Token>
+   * @param [<Lexeme>] lexemes
+   * @return [[<Token>] tokens, [<Token>] issues]
    */
 
 	}, {
@@ -509,33 +516,25 @@ var Lexer = function (_Emitter) {
 
 			var token = void 0;
 			var tokens = [];
+			var issues = [];
 			var accept = this.mode.tokenize;
 
 			while (lexemes.length > 0) {
+				try {
+					var _accept$call = accept.call(this.mode, lexemes);
 
-				if (lexemes[0] === 'end') break;
-				if (lexemes[0].value.match(/\s+/)) {
-					var lexeme = lexemes.shift();
-					token = new _token2.default('whitespace', lexeme.value, lexeme.offset);
-				} else {
-					var result = accept.call(this.mode, lexemes);
-					if (result) {
-						var _result = _slicedToArray(result, 2);
+					var _accept$call2 = _slicedToArray(_accept$call, 2);
 
-						token = _result[0];
-						accept = _result[1];
-					} else {
-						var _lexeme = lexemes.shift();
-						token = new _token2.default('invalid', _lexeme.value, _lexeme.offset);
-						accept = this.mode.tokenize;
-					}
+					token = _accept$call2[0];
+					accept = _accept$call2[1];
+
+					tokens.push(token);
+				} catch (e) {
+					this.emit('error', token);
 				}
-
-				this.emit('token', token);
-				tokens.push(token);
 			}
 
-			return tokens;
+			return [tokens, issues];
 		}
 	}]);
 
@@ -612,6 +611,7 @@ var Token = function () {
 		this.offset = offset;
 		this.type = [];
 		this.value = value;
+		this.invalid = false;
 
 		this.set_type(type);
 		this.previous = function () {
@@ -620,6 +620,12 @@ var Token = function () {
 	}
 
 	_createClass(Token, [{
+		key: "set_invalid",
+		value: function set_invalid(bool) {
+			this.invalid = bool;
+			return this;
+		}
+	}, {
 		key: "set_type",
 		value: function set_type(type) {
 			if (typeof type === 'string') type = [type];

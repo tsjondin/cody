@@ -27,6 +27,15 @@ gulp.task('cursors', function () {
 	});
 });
 
+gulp.task('contexts', function () {
+	fs.readdirSync('./contexts').forEach(function (context) {
+		if (context.match(/^\./)) return;
+		var src_path = './contexts/' + context;
+		var target_dir = './dist/contexts';
+		do_browserify(src_path, target_dir, context, 'Cody.Contexts.' + context.replace('.js', ''));
+	});
+});
+
 gulp.task('renderers', function () {
 	fs.readdirSync('./renderers').forEach(function (renderer) {
 		if (renderer.match(/^\./)) return;
@@ -49,13 +58,13 @@ gulp.task('core', function () {
 	do_browserify('./index.js', './dist', 'cody.js', 'Cody');
 });
 
-gulp.task('default', ['core', 'modes', 'renderers', 'cursors']);
+gulp.task('default', ['core', 'modes', 'contexts']);
 gulp.task('watch', function () {
 
-	gulp.watch(['./renderers/*.js', '!./renderers/*.swp'], ['renderers']);
-	gulp.watch(['./cursors/*.js', '!./cursors/*.swp'], ['cursors']);
 	gulp.watch(['./src/*.js', '!*.swp'], ['core']);
 	gulp.watch(['./index.js'], ['core']);
+
 	gulp.watch(['./modes/*.js', '!*.swp'], ['modes']);
+	gulp.watch(['./contexts/*.js', '!./contexts/*.swp'], ['contexts']);
 
 });

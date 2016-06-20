@@ -7,10 +7,16 @@ export default class Token {
 		this.offset = offset;
 		this.type = [];
 		this.value = value;
+		this.invalid = false;
 
 		this.set_type(type);
 		this.previous = () => previous;
 
+	}
+
+	set_invalid (bool) {
+		this.invalid = bool;
+		return this;
 	}
 
 	set_type (type) {

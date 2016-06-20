@@ -33,6 +33,16 @@ var HTMLRenderer = function (_Renderer) {
 
 		_this.length_diff = 0;
 
+		_this.editor.on('invalid', function () {
+			_this.context.classList.remove('cody-valid');
+			_this.context.classList.add('cody-invalid');
+		});
+
+		_this.editor.on('valid', function () {
+			_this.context.classList.remove('cody-invalid');
+			_this.context.classList.add('cody-valid');
+		});
+
 		return _this;
 	}
 

@@ -14,10 +14,6 @@ export default class Lexer extends Emitter {
 	 */
 	constructor (mode)  {
 		super();
-		this.mode;
-	}
-
-	set_mode (mode) {
 		this.mode = mode;
 	}
 
@@ -92,38 +88,26 @@ export default class Lexer extends Emitter {
 	 * Takes a list of  Lexeme's, likely from the scan, and
 	 * returns a list of Token's
 	 *
-	 * @param Array<Lexeme> lexemes
-	 * @return Array<Token>
+	 * @param [<Lexeme>] lexemes
+	 * @return [[<Token>] tokens, [<Token>] issues]
 	 */
 	evaluate (lexemes) {
 
 		let token;
 		let tokens = [];
+		let issues = [];
 		let accept = this.mode.tokenize;
 
 		while (lexemes.length > 0) {
-
-			if (lexemes[0] === 'end') break;
-			if (lexemes[0].value.match(/\s+/)) {
-				let lexeme = lexemes.shift();
-				token = new Token('whitespace', lexeme.value, lexeme.offset);
-			} else {
-				let result = accept.call(this.mode, lexemes);
-				if (result) {
-					[token, accept] = result;
-				} else {
-					let lexeme = lexemes.shift();
-					token = new Token('invalid', lexeme.value, lexeme.offset);
-					accept = this.mode.tokenize;
-				}
+			try {
+				[token, accept] = accept.call(this.mode, lexemes);
+				tokens.push(token);
+			} catch (e) {
+				this.emit('error', token);
 			}
-
-			this.emit('token', token);
-			tokens.push(token);
-
 		}
 
-		return tokens;
+		return [tokens, issues];
 
 	}
 

@@ -3,8 +3,9 @@
 import Lexer from './src/lexer';
 import Stream from './src/stream';
 import Emitter from './src/emitter';
+import Mode from './src/mode';
+import Context from './src/context';
 
-import ArrayMutator from './src/arraymutator';
 import Item from './src/item';
 
 class Cody extends Emitter {
@@ -13,18 +14,19 @@ class Cody extends Emitter {
 
 		super();
 
-		this.cursor = new options.cursor(this);
-		this.renderer = new options.renderer(this);
+		if (!(options.mode instanceof Mode))
+			throw new Error('Cody cannot operate without a Mode');
+		else if (!(options.context.class instanceof Context))
+			throw new Error('Cody cannot operate without a Context');
 
-		this.lexer = new Lexer();
-		this.mode = new options.mode(this.lexer);
-		this.lexer.set_mode(this.mode);
+		this.context = new options.context.class(this, options.context.options);
+		this.mode = options.mode.class(options.mode.options);
+
+		this.lexer = new Lexer(this.mode);
 
 		this.lexer.on('lexeme', lexeme => this.emit('lexeme', lexeme));
 		this.lexer.on('token', token => this.emit('token', token));
-
-		this.cursor.set_context(options.context);
-		this.renderer.set_context(options.context);
+		this.lexer.on('error', token => this.emit('error', token));
 
 		this.stream = new Stream("");
 		this.lexemes = [];
@@ -67,25 +69,33 @@ class Cody extends Emitter {
 		let items = [];
 
 		try {
-			let tokens = this.lexer.evaluate(this.lexemes);
+
+			let [tokens, issues] = this.lexer.evaluate(
+				this.lexemes
+			);
+
 			items = tokens.map(token => {
 				let item = new Item(token);
 				this.emit('item', item);
 				return item;
 			});
-			this.emit('success');
+
+			if (issues.length > 0) {
+				this.emit('invalid', issues);
+			} else {
+				this.emit('valid');
+			}
+
 		} catch (e) {
 			this.emit('error', e);
 		}
 
-		this.renderer.do_render(items);
+		this.context.do_render(items);
 		return this;
 
 	}
 
 }
 
-Cody.Renderers = {};
-Cody.Cursors = {};
-
+Cody.Contexts = {};
 export default Cody;

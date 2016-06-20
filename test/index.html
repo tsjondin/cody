@@ -3,7 +3,11 @@
   <head>
     <style>
       .cody {
-        font-family: monospace;
+        font: normal normal 12pt monospace;
+        border: 1px solid #bbbbbb;
+        border-radius: 2px;
+        padding: 8px;
+        outline: 0px solid transparent;
       }
 
       .cody-item {
@@ -12,6 +16,10 @@
 
       .cody-string {
         color: #228833;
+      }
+
+      .cody-regexp {
+        color: #bb5511;
       }
 
       .cody-variable {
@@ -27,6 +35,10 @@
         border-bottom: 2px dotted #cc4422;
       }
 
+      .cody.cody-invalid {
+        border: 1px solid #cc4422;
+      }
+
       textarea {
         width: 90%;
       }
@@ -34,8 +46,7 @@
     </style>
     <script src="../dist/cody.js"></script>
     <script src="../dist/modes/genericql.js"></script>
-    <script src="../dist/renderers/htmlrenderer.js"></script>
-    <script src="../dist/cursors/htmlcursor.js"></script>
+    <script src="../dist/contexts/html.js"></script>
   </head>
   <body>
     <div id="visual" spellcheck="false" contenteditable="true"></div>

@@ -11,6 +11,16 @@ export default class HTMLRenderer extends Renderer {
 
 		this.length_diff = 0;
 
+		this.editor.on('invalid', () => {
+			this.context.classList.remove('cody-valid');
+			this.context.classList.add('cody-invalid');
+		});
+
+		this.editor.on('valid', () => {
+			this.context.classList.remove('cody-invalid');
+			this.context.classList.add('cody-valid');
+		});
+
 	}
 
 	get_render (item) {

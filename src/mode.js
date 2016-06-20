@@ -2,11 +2,12 @@
 
 import Lexeme from './lexeme';
 import Token from './token';
+import Emitter from './emitter';
 
-export default class Mode {
+export default class Mode extends Emitter {
 
-	constructor (lexer) {
-		this.lexer = lexer;
+	constructor () {
+		super();
 		this.lexemes = [];
 		this.keywords = [];
 		this.index;
@@ -22,10 +23,7 @@ export default class Mode {
 			if (condition(item)) return slice;
 		}
 
-		/**
-		 * The way this occurs is at end-of-stream
-		 */
-		return slice.concat(['end']);
+		return slice;
 
 	}
 
