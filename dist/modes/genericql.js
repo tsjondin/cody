@@ -164,7 +164,7 @@ var GenericQLMode = function (_Mode) {
 		key: 'accept_name',
 		value: function accept_name(lexemes) {
 
-			if (lexemes[0].value.match(/^[a-zA-Z_][\w_]+$/)) {
+			if (lexemes[0].value.match(/^[a-zA-Z_][\w_]*$/)) {
 				var lexeme = lexemes.shift();
 				return [new _token2.default('variable', lexeme.value, lexeme.offset), this.accept_operator];
 			}
@@ -196,10 +196,17 @@ var GenericQLMode = function (_Mode) {
 					return L.value === syntax_map.rightparen;
 				});
 				var end = block.pop();
+				if (end.value !== syntax_map.rightparen) {
+					block.push(end);
+					end = null;
+				}
 
 				var tokens = this.lexer.evaluate(block);
-				tokens.push(new _token2.default(['operator', 'rightparen'], end.value, end.offset));
+
 				tokens.unshift(new _token2.default(['operator', 'leftparen'], start.value, start.offset));
+				if (end) {
+					tokens.push(new _token2.default(['operator', 'rightparen'], end.value, end.offset));
+				}
 
 				return [new _token2.default('block', tokens, start.offset), this.accept_conditional_operator];
 			}

@@ -64,7 +64,7 @@ var HTMLCursor = function (_Cursor) {
 
 			while (offset > 0) {
 				if (children.length === 0) {
-					offset = 0;
+					/* Place us at the last child */
 					break;
 				} else {
 					last = children.shift();

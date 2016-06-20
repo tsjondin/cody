@@ -60,7 +60,6 @@ export default class HTMLRenderer extends Renderer {
 
 	set_context (context) {
 
-
 		this.context = context;
 		this.context.className = 'cody';
 

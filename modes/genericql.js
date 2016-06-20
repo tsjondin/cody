@@ -141,7 +141,7 @@ export default class GenericQLMode extends Mode {
 
 	accept_name (lexemes) {
 
-		if (lexemes[0].value.match(/^[a-zA-Z_][\w_]+$/)) {
+		if (lexemes[0].value.match(/^[a-zA-Z_][\w_]*$/)) {
 			let lexeme = lexemes.shift();
 			return [
 				new Token('variable', lexeme.value, lexeme.offset),
@@ -172,10 +172,17 @@ export default class GenericQLMode extends Mode {
 			let start = lexemes.shift();
 			let block = this.consume(lexemes, (L) => (L.value === syntax_map.rightparen));
 			let end = block.pop();
+			if (end.value !== syntax_map.rightparen) {
+				block.push(end);
+				end = null;
+			}
 
 			let tokens = this.lexer.evaluate(block);
-			tokens.push(new Token(['operator', 'rightparen'], end.value, end.offset));
+
 			tokens.unshift(new Token(['operator', 'leftparen'], start.value, start.offset));
+			if (end) {
+				tokens.push(new Token(['operator', 'rightparen'], end.value, end.offset));
+			}
 
 			return [
 				new Token('block', tokens, start.offset),
