@@ -21,9 +21,13 @@ var _emitter = require('./src/emitter');
 
 var _emitter2 = _interopRequireDefault(_emitter);
 
-var _arraymutator = require('./src/arraymutator');
+var _mode = require('./src/mode');
 
-var _arraymutator2 = _interopRequireDefault(_arraymutator);
+var _mode2 = _interopRequireDefault(_mode);
+
+var _context = require('./src/context');
+
+var _context2 = _interopRequireDefault(_context);
 
 var _item = require('./src/item');
 
@@ -45,10 +49,10 @@ var Cody = function (_Emitter) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Cody).call(this));
 
-		if (!(options.mode instanceof Mode)) throw new Error('Cody cannot operate without a Mode');else if (!(options.context.class instanceof Context)) throw new Error('Cody cannot operate without a Context');
+		if (!options.mode.class) throw new Error('Cody cannot operate without a Mode');else if (!options.context.class) throw new Error('Cody cannot operate without a Context');
 
 		_this.context = new options.context.class(_this, options.context.options);
-		_this.mode = options.mode.class(options.mode.options);
+		_this.mode = new options.mode.class(options.mode.options);
 
 		_this.lexer = new _lexer2.default(_this.mode);
 
@@ -139,7 +143,7 @@ var Cody = function (_Emitter) {
 Cody.Contexts = {};
 exports.default = Cody;
 
-},{"./src/arraymutator":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/stream":7}],2:[function(require,module,exports){
+},{"./src/context":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/mode":7,"./src/stream":8}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -150,90 +154,34 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var ArrayMutator = function () {
-	function ArrayMutator(array) {
-		var _this = this;
+var Context = function () {
+	function Context(editor, options) {
+		_classCallCheck(this, Context);
 
-		_classCallCheck(this, ArrayMutator);
-
-		var pointer = array.length - 1;
-
-		this.position = function () {
-			return pointer;
-		};
-		this.move = function (position) {
-			return pointer = position;
-		};
-		this.get = function (index) {
-			return array[index];
-		};
-		this.insert = function (value) {
-			return array.splice(pointer, 0, value);
-		};
-
-		this.push = function (value) {
-			array.push(value);
-			_this.move(array.length - 1);
-		};
+		this.editor = editor;
 	}
 
-	_createClass(ArrayMutator, [{
-		key: "forward",
-		value: function forward() {
-			this.move(this.position() + 1);
-			return this;
+	_createClass(Context, [{
+		key: 'get_cursor_offset',
+		value: function get_cursor_offset() {
+			throw new Error('Unimplemented function for Context base class');
 		}
 	}, {
-		key: "backward",
-		value: function backward() {
-			this.move(this.position() - 1);
-			return this;
+		key: 'set_cursor_offset',
+		value: function set_cursor_offset() {
+			throw new Error('Unimplemented function for Context base class');
 		}
 	}, {
-		key: "reset",
-		value: function reset() {
-			this.move(-1);
-			return this;
-		}
-	}, {
-		key: "next",
-		value: function next() {
-			this.forward();
-			return this.current();
-		}
-	}, {
-		key: "last",
-		value: function last() {
-			return this.get(this.position() - 1);
-		}
-	}, {
-		key: "current",
-		value: function current() {
-			return this.get(this.position());
-		}
-	}, {
-		key: "until",
-		value: function until(condition) {
-
-			var sublist = [];
-			var item = void 0;
-
-			while (item = this.next()) {
-				if (condition(item)) {
-					sublist.push(item);
-					break;
-				}
-				sublist.push(item);
-			}
-
-			return sublist;
+		key: 'do_render',
+		value: function do_render() {
+			throw new Error('Unimplemented function for Context base class');
 		}
 	}]);
 
-	return ArrayMutator;
+	return Context;
 }();
 
-exports.default = ArrayMutator;
+exports.default = Context;
 
 },{}],3:[function(require,module,exports){
 "use strict";
@@ -543,7 +491,96 @@ var Lexer = function (_Emitter) {
 
 exports.default = Lexer;
 
-},{"./emitter":3,"./lexeme":5,"./token":8}],7:[function(require,module,exports){
+},{"./emitter":3,"./lexeme":5,"./token":9}],7:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _lexeme = require('./lexeme');
+
+var _lexeme2 = _interopRequireDefault(_lexeme);
+
+var _token = require('./token');
+
+var _token2 = _interopRequireDefault(_token);
+
+var _emitter = require('./emitter');
+
+var _emitter2 = _interopRequireDefault(_emitter);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Mode = function (_Emitter) {
+	_inherits(Mode, _Emitter);
+
+	function Mode() {
+		_classCallCheck(this, Mode);
+
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Mode).call(this));
+
+		_this.lexemes = [];
+		_this.keywords = [];
+		_this.index;
+		return _this;
+	}
+
+	_createClass(Mode, [{
+		key: 'consume',
+		value: function consume(lexemes, condition) {
+
+			var item = void 0;
+			var slice = [];
+
+			while (item = lexemes.shift()) {
+				slice.push(item);
+				if (condition(item)) return slice;
+			}
+
+			return slice;
+		}
+	}, {
+		key: 'tokenize',
+		value: function tokenize(lexeme, list) {
+			return this.get_token('unknown', lexeme);
+		}
+	}, {
+		key: 'get_token',
+		value: function get_token(type, lexeme) {
+			return new _token2.default(type, lexeme.value, lexeme.offset);
+		}
+	}, {
+		key: 'get_lexeme',
+		value: function get_lexeme(value, offset) {
+			return new _lexeme2.default(value, offset);
+		}
+	}, {
+		key: 'set_index',
+		value: function set_index(value) {
+			this.index = value;
+		}
+	}, {
+		key: 'get_index',
+		value: function get_index() {
+			return this.index;
+		}
+	}]);
+
+	return Mode;
+}(_emitter2.default);
+
+exports.default = Mode;
+
+},{"./emitter":3,"./lexeme":5,"./token":9}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -593,7 +630,7 @@ var Stream = function () {
 
 exports.default = Stream;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

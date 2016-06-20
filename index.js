@@ -14,13 +14,13 @@ class Cody extends Emitter {
 
 		super();
 
-		if (!(options.mode instanceof Mode))
+		if (!options.mode.class)
 			throw new Error('Cody cannot operate without a Mode');
-		else if (!(options.context.class instanceof Context))
+		else if (!options.context.class)
 			throw new Error('Cody cannot operate without a Context');
 
 		this.context = new options.context.class(this, options.context.options);
-		this.mode = options.mode.class(options.mode.options);
+		this.mode = new options.mode.class(options.mode.options);
 
 		this.lexer = new Lexer(this.mode);
 

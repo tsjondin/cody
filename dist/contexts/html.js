@@ -33,7 +33,7 @@ var HTML = function (_Context) {
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(HTML).call(this, editor, options));
 
 		_this.node = options.node;
-		_this.length_diff = 0;
+		_this.node.className = 'cody';
 
 		_this.editor.on('invalid', function () {
 			_this.node.classList.remove('cody-valid');
@@ -45,32 +45,25 @@ var HTML = function (_Context) {
 			_this.node.classList.add('cody-valid');
 		});
 
+		var length_down = void 0;
+		_this.length_diff = 0;
+
+		_this.node.addEventListener('keydown', function () {
+			length_down = _this.node.textContent.length;
+		});
+
+		_this.node.addEventListener('keyup', function () {
+			_this.length_diff = _this.node.textContent.length - length_down;
+			_this.editor.do_update(_this.node.textContent);
+		});
+
 		return _this;
 	}
 
 	_createClass(HTML, [{
-		key: 'set_node',
-		value: function set_node(node) {
-			var _this2 = this;
-
-			this.node = node;
-			this.node.className = 'cody';
-
-			var length_down = void 0;
-
-			this.node.addEventListener('keydown', function () {
-				length_down = _this2.node.textContent.length;
-			});
-
-			this.node.addEventListener('keyup', function () {
-				_this2.length_diff = _this2.node.textContent.length - length_down;
-				_this2.editor.do_update(_this2.node.textContent);
-			});
-		}
-	}, {
 		key: 'get_render',
 		value: function get_render(item) {
-			var _this3 = this;
+			var _this2 = this;
 
 			var node = document.createElement('span');
 			var classes = item.get_classes();
@@ -84,7 +77,7 @@ var HTML = function (_Context) {
 
 			if (Array.isArray(item.value)) {
 				item.value.map(function (token) {
-					return _this3.get_render(new _item2.default(token));
+					return _this2.get_render(new _item2.default(token));
 				}).map(node.appendChild.bind(node));
 			} else {
 				node.textContent = item.value;
@@ -95,22 +88,22 @@ var HTML = function (_Context) {
 	}, {
 		key: 'do_render',
 		value: function do_render(items) {
-			var _this4 = this;
+			var _this3 = this;
 
 			window.requestAnimationFrame(function () {
 
-				var offset = _this4.get_cursor_offset();
+				var offset = _this3.get_cursor_offset();
 
-				_this4.node.innerHTML = "";
+				_this3.node.innerHTML = "";
 
 				items.forEach(function (item) {
-					_this4.node.appendChild(_this4.get_render(item));
+					_this3.node.appendChild(_this3.get_render(item));
 				});
 
-				if (_this4.length_diff < 0) {
-					_this4.editor.cursor.set_cursor_offset(offset - _this4.length_diff);
+				if (_this3.length_diff < 0) {
+					_this3.set_cursor_offset(offset - _this3.length_diff);
 				} else {
-					_this4.editor.cursor.set_cursor_offset(offset + _this4.length_diff);
+					_this3.set_cursor_offset(offset + _this3.length_diff);
 				}
 			});
 		}

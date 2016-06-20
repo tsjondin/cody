@@ -11,7 +11,7 @@ export default class HTML extends Context {
 		super(editor, options);
 
 		this.node = options.node;
-		this.length_diff = 0;
+		this.node.className = 'cody';
 
 		this.editor.on('invalid', () => {
 			this.node.classList.remove('cody-valid');
@@ -23,13 +23,8 @@ export default class HTML extends Context {
 			this.node.classList.add('cody-valid');
 		});
 
-	}
-
-	set_node (node) {
-		this.node = node;
-		this.node.className = 'cody';
-
 		let length_down;
+		this.length_diff = 0;
 
 		this.node.addEventListener('keydown', () => {
 			length_down = this.node.textContent.length;
@@ -39,6 +34,7 @@ export default class HTML extends Context {
 			this.length_diff = this.node.textContent.length - length_down;
 			this.editor.do_update(this.node.textContent);
 		});
+
 	}
 
 	get_render (item) {
@@ -78,9 +74,9 @@ export default class HTML extends Context {
 			});
 
 			if (this.length_diff < 0) {
-				this.editor.cursor.set_cursor_offset(offset - this.length_diff);
+				this.set_cursor_offset(offset - this.length_diff);
 			} else {
-				this.editor.cursor.set_cursor_offset(offset + this.length_diff);
+				this.set_cursor_offset(offset + this.length_diff);
 			}
 
 		});
