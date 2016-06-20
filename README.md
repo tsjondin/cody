@@ -2,7 +2,6 @@
 
 What is needed before this could possibly work
 
-- [ ] Implement the HTMLCursor
 - [ ] Fix the offset designation during scanning
 - [ ] Fix the standalone (modes/renderers/cursor) module handling, standalone does not play very nice with es6 default exports
 - [ ] Implement line handling (possibly through an ephemeral Line object, implicit linebreak lexeme/token?)
