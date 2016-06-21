@@ -36,6 +36,10 @@ export default class Mode extends Emitter {
 	}
 
 	match (lexemes, value) {
+		return (lexemes[0] && lexemes[0].value.match(value));
+	}
+
+	equals (lexemes, value) {
 		return (lexemes[0] && lexemes[0].value === value);
 	}
 

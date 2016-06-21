@@ -424,7 +424,7 @@ var Lexer = function (_Emitter) {
 					}
 
 					lexemes.push(new_lexeme(ch, stream));
-				} else if (ch === ' ' || ch.match(/\r|\r\n/)) {
+				} else if (ch === ' ') {
 
 					if (value.length > 0) {
 						if (ws.length > 0) {
@@ -461,11 +461,19 @@ var Lexer = function (_Emitter) {
 	}, {
 		key: 'evaluate',
 		value: function evaluate(lexemes) {
+			var _this3 = this;
 
 			var token = void 0;
 			var tokens = [];
 			var issues = [];
 			var accept = this.mode.tokenize;
+
+			this.mode.on('token', function (token) {
+				return _this3.emit('token', token);
+			});
+			this.mode.on('error', function (token) {
+				return _this3.emit('error', token);
+			});
 
 			while (lexemes.length > 0) {
 				try {
@@ -476,9 +484,11 @@ var Lexer = function (_Emitter) {
 					token = _accept$call2[0];
 					accept = _accept$call2[1];
 
+					this.emit('token', token);
 					tokens.push(token);
 				} catch (e) {
 					this.emit('error', token);
+					console.log(token, e);
 				}
 			}
 
@@ -554,6 +564,11 @@ var Mode = function (_Emitter) {
 	}, {
 		key: 'match',
 		value: function match(lexemes, value) {
+			return lexemes[0] && lexemes[0].value.match(value);
+		}
+	}, {
+		key: 'equals',
+		value: function equals(lexemes, value) {
 			return lexemes[0] && lexemes[0].value === value;
 		}
 	}, {

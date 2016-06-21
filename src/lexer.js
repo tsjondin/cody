@@ -55,7 +55,7 @@ export default class Lexer extends Emitter {
 
 				lexemes.push(new_lexeme(ch, stream));
 
-			} else if (ch === ' ' || ch.match(/\r|\r\n/)) {
+			} else if (ch === ' ') {
 
 
 				if (value.length > 0) {
@@ -98,12 +98,17 @@ export default class Lexer extends Emitter {
 		let issues = [];
 		let accept = this.mode.tokenize;
 
+		this.mode.on('token', token => this.emit('token', token));
+		this.mode.on('error', token => this.emit('error', token));
+
 		while (lexemes.length > 0) {
 			try {
 				[token, accept] = accept.call(this.mode, lexemes);
+				this.emit('token', token);
 				tokens.push(token);
 			} catch (e) {
 				this.emit('error', token);
+				console.log(token, e);
 			}
 		}
 

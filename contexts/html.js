@@ -166,20 +166,14 @@ export default class HTML extends Context {
 
 	}
 
-	set_cursor_offset (offset) {
-
-		let selection = getSelection();
-		let range = document.createRange();
+	get_cursor_offset_node (offset) {
 
 		let children = Array.prototype.slice.call(this.node.children, 0);
 		let last;
 
-
 		while (offset > 0) {
-			if (children.length === 0) {
-				/* Place us at the last child */
-				break;
-			} else {
+			if (children.length === 0) break;
+			else {
 				last = children.shift();
 				if (last.children.length > 0) {
 					children = Array.prototype.slice.call(last.children, 0).concat(children);
@@ -190,11 +184,25 @@ export default class HTML extends Context {
 		}
 
 		offset = ((last.textContent.length) + offset) - 1;
+		return last;
+
+	}
+
+	set_cursor_offset (offset) {
+
+		let selection = getSelection();
+		let range = document.createRange();
+		let focus = this.get_cursor_offset_node(offset);
+
+		let focusnode = focus.childNodes[0];
+		if (!focusnode) focusnode = focus;
 
 		try {
-			range.setStart(last.childNodes[0], offset);
+			range.setStart(focusnode, offset);
 		} catch (e) {
-			range.setStart(last.childNodes[0], last.textContent.length);
+			/* Likely an invalid offset error, set to end of focus node, this should
+			 * never happen but it currently does */
+			range.setStart(focusnode, focus.textContent.length);
 		}
 
 		selection.removeAllRanges();
