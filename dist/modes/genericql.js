@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -13,9 +15,9 @@ var _mode = require('../src/mode');
 
 var _mode2 = _interopRequireDefault(_mode);
 
-var _token2 = require('../src/token');
+var _token = require('../src/token');
 
-var _token3 = _interopRequireDefault(_token2);
+var _token2 = _interopRequireDefault(_token);
 
 var _lexeme = require('../src/lexeme');
 
@@ -37,43 +39,42 @@ if (!Object.values) {
 	};
 }
 
-var operators = {
-	'equals': '=',
-	'negate': '!',
-	'higher-than': '>',
-	'lower-than': '<',
-	'not-equals': '!=',
-	'lower-than-or-equals': '<=',
-	'higher-than-or-equals': '>=',
-	'regex-match': '~',
-	'not-regex-match': '!~',
-	'dot': '.',
-	'slash': '/'
-};
-
-var syntax_map = {
-	'string': '"',
-	'leftbracket': '[',
-	'rightbracket': ']',
-	'leftparen': '(',
-	'rightparen': ')',
-	'leftbrace': '{',
-	'rightbrace': '}'
-};
-
 var GenericQLMode = function (_Mode) {
 	_inherits(GenericQLMode, _Mode);
 
 	function GenericQLMode() {
 		_classCallCheck(this, GenericQLMode);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GenericQLMode).call(this));
+		return _possibleConstructorReturn(this, Object.getPrototypeOf(GenericQLMode).call(this, {
 
-		_this.lexemes = Object.values(syntax_map).concat(Object.values(operators));
+			keywords: ['and', 'or'],
 
-		_this.keywords = ['and', 'or'];
+			operators: {
 
-		return _this;
+				'equals': '=',
+				'negate': '!',
+				'higher than': '>',
+				'lower than': '<',
+				'not equals': '!=',
+				'lower than or equals': '<=',
+				'higher than-or equals': '>=',
+				'regex match': '~',
+				'not regex match': '!~',
+				'dot': '.',
+				'slash': '/'
+			},
+
+			symbols: {
+				'string': '"',
+				'leftbracket': '[',
+				'rightbracket': ']',
+				'leftparen': '(',
+				'rightparen': ')',
+				'leftbrace': '{',
+				'rightbrace': '}'
+			}
+
+		}));
 	}
 
 	_createClass(GenericQLMode, [{
@@ -85,14 +86,14 @@ var GenericQLMode = function (_Mode) {
 		key: 'handle_invalid',
 		value: function handle_invalid(lexemes) {
 			var lexeme = lexemes.shift();
-			return [new _token3.default('invalid', lexeme.value, lexeme.offset).set_invalid(true), this.tokenize];
+			return [new _token2.default('invalid', lexeme.value, lexeme.offset).set_invalid(true), this.tokenize];
 		}
 	}, {
 		key: 'handle_whitespace',
 		value: function handle_whitespace(lexemes, accept) {
 			if (lexemes[0].value.match(/^\s+$/)) {
 				var lexeme = lexemes.shift();
-				return [new _token3.default('whitespace', lexeme.value, lexeme.offset), accept];
+				return [new _token2.default('whitespace', lexeme.value, lexeme.offset), accept];
 			} else {
 				return this.handle_invalid(lexemes);
 			}
@@ -204,7 +205,7 @@ var GenericQLMode = function (_Mode) {
 				tokens.push(token_lh);
 
 				if (lexemes.length === 0) {
-					return [new _token3.default('expression', tokens, tokens[0].offset), this.accept_operator];
+					return [new _token2.default('expression', tokens, tokens[0].offset), this.accept_operator];
 				}
 
 				var whitespace = void 0;
@@ -230,7 +231,7 @@ var GenericQLMode = function (_Mode) {
 
 				if (!token_op.type.includes('operator')) {
 					lexemes.unshift(new _lexeme2.default(token_op.value, token_op.offset));
-					return [new _token3.default('expression', tokens, tokens[0].offset), this.accept_operator];
+					return [new _token2.default('expression', tokens, tokens[0].offset), this.accept_operator];
 				}
 				tokens.push(token_op);
 
@@ -256,7 +257,7 @@ var GenericQLMode = function (_Mode) {
 				var type = ['expression'];
 				if (token_lh.invalid || token_op.invalid || token_rh.invalid) type.push('invalid');
 
-				return [new _token3.default(type, tokens, token_lh.offset), this.accept_operator];
+				return [new _token2.default(type, tokens, token_lh.offset), this.accept_operator];
 			}
 
 			return [token, accept];
@@ -289,25 +290,23 @@ var GenericQLMode = function (_Mode) {
 		key: 'accept_binary_operator',
 		value: function accept_binary_operator(lexemes) {
 
-			var opkeys = Object.values(operators);
-			if (opkeys.includes(lexemes[0].value)) {
+			var opsyms = Object.values(this.operators);
+			if (this.includes(lexemes, opsyms)) {
 
 				/**
-     * Stream valid operator lexemes until we find one that isn't, backup the
-     * stream and then validate the built operator
+     * Consume valid operator lexemes until we find one that isn't, and then
+     * validate the built operator
      */
-				var offset = lexemes[0].offset;
-				var op = this.consume(lexemes, function (L) {
-					return !opkeys.includes(L.value);
+				var operator = this.consume_exclusive(lexemes, function (L) {
+					return !opsyms.includes(L.value);
 				});
-				lexemes.unshift(op.pop());
-
-				var value = op.map(function (L) {
+				var value = operator.map(function (L) {
 					return L.value;
 				}).join('');
-				if (Object.values(operators).includes(value)) {
-					var subtype = Object.keys(operators)[Object.values(operators).indexOf(value)];
-					return [new _token3.default(['operator', subtype], value, offset), this.accept_variable];
+
+				if (opsyms.includes(value)) {
+					var subtype = Object.keys(this.operators)[opsyms.indexOf(value)];
+					return [new _token2.default(['operator', subtype], value, operator[0].offset), this.accept_variable];
 				} else {
 					lexemes.unshift(new _lexeme2.default(value, offset));
 					return this.handle_whitespace(lexemes);
@@ -319,29 +318,23 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'accept_regexp',
 		value: function accept_regexp(lexemes) {
+			var _this2 = this;
 
-			if (lexemes[0].value === operators.slash) {
+			if (this.match(lexemes, this.operators.slash)) {
 
 				/**
      * Stream lexemes until we find the end of the string
      */
-				var offset = lexemes[0].offset;
 
 				var regex = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
-					return L.value === operators.slash;
+					return L.value === _this2.operators.slash;
+				}), this.consume_exclusive(lexemes, function (L) {
+					return !L.value.match(/^[gimuy]+$/);
 				}));
 
-				var flags = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
-					return !L.value.match(/\w+/);
-				}));
-
-				var value = regex.map(function (L) {
+				return [new _token2.default('regexp', regex.map(function (L) {
 					return L.value;
-				}).join('') + flags.map(function (L) {
-					return L.value;
-				}).join('');
-
-				return [new _token3.default('regexp', value, offset), this.accept_conditional_operator];
+				}).join(''), regex[0].offset), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_regexp);
@@ -349,20 +342,21 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'accept_string',
 		value: function accept_string(lexemes) {
+			var _this3 = this;
 
-			if (lexemes[0].value === syntax_map.string) {
+			if (this.match(lexemes, this.symbols.string)) {
 
 				/**
      * Stream lexemes until we find the end of the string
      */
-				var offset = lexemes[0].offset;
+				var _offset = lexemes[0].offset;
 				var string = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
-					return L.value === syntax_map.string;
+					return L.value === _this3.symbols.string;
 				}));
 
-				return [new _token3.default('string', string.map(function (L) {
+				return [new _token2.default('string', string.map(function (L) {
 					return L.value;
-				}).join(''), offset), this.accept_conditional_operator];
+				}).join(''), _offset), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_string);
@@ -371,9 +365,9 @@ var GenericQLMode = function (_Mode) {
 		key: 'accept_conditional_operator',
 		value: function accept_conditional_operator(lexemes) {
 
-			if (this.keywords.includes(lexemes[0].value)) {
+			if (this.includes(lexemes, this.keywords)) {
 				var lexeme = lexemes.shift();
-				return [new _token3.default(['operator', lexeme.value], lexeme.value, lexeme.offset), this.accept_expression];
+				return [new _token2.default(['operator', lexeme.value], lexeme.value, lexeme.offset), this.accept_expression];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_conditional_operator);
@@ -384,7 +378,7 @@ var GenericQLMode = function (_Mode) {
 
 			if (lexemes[0].value.match(/^[a-zA-Z_][\w_]*$/)) {
 				var lexeme = lexemes.shift();
-				return [new _token3.default('variable', lexeme.value, lexeme.offset), this.accept_binary_operator];
+				return [new _token2.default('variable', lexeme.value, lexeme.offset), this.accept_binary_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_name);
@@ -395,15 +389,15 @@ var GenericQLMode = function (_Mode) {
 
 			if (lexemes[0].value.match(/^\d$/)) {
 
-				var offset = lexemes[0].offset;
+				var _offset2 = lexemes[0].offset;
 				var number = this.consume(lexemes, function (L) {
 					return !L.value.match(/^\d$/);
 				});
 				lexemes.unshift(number.pop());
 
-				return [new _token3.default('number', number.map(function (L) {
+				return [new _token2.default('number', number.map(function (L) {
 					return L.value;
-				}).join(''), offset), this.accept_conditional_operator];
+				}).join(''), _offset2), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_number);
@@ -411,45 +405,54 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'accept_block',
 		value: function accept_block(lexemes) {
+			var _this4 = this;
 
-			if (lexemes[0].value === syntax_map.leftparen) {
+			if (this.match(lexemes, this.symbols.leftparen)) {
+				var _ret = function () {
 
-				var start = lexemes.shift();
-				var block = this.consume(lexemes, function (L) {
-					return L.value === syntax_map.rightparen;
-				});
-				var end = block.pop();
+					var start = lexemes.shift();
+					var depth = 0;
+					var block = _this4.consume(lexemes, function (L) {
+						if (L.value === _this4.symbols.rightparen && depth === 0) return true;else if (L.value === _this4.symbols.rightparen) depth--;else if (L.value === _this4.symbols.leftparen) depth++;
+						return false;
+					});
+					var end = block.pop();
 
-				if (end.value !== syntax_map.rightparen) {
-					block.push(end);
-					end = null;
-				}
-
-				var tokens = [];
-				var _token = void 0;
-				var accept = this.tokenize;
-
-				while (block.length > 0) {
-					try {
-						var _accept$call = accept.call(this, block);
-
-						var _accept$call2 = _slicedToArray(_accept$call, 2);
-
-						_token = _accept$call2[0];
-						accept = _accept$call2[1];
-
-						tokens.push(_token);
-					} catch (e) {
-						this.emit('error', _token);
+					if (end.value !== _this4.symbols.rightparen) {
+						block.push(end);
+						end = null;
 					}
-				}
 
-				tokens.unshift(new _token3.default(['operator', 'leftparen'], start.value, start.offset));
-				if (end) {
-					tokens.push(new _token3.default(['operator', 'rightparen'], end.value, end.offset));
-				}
+					var tokens = [];
+					var token = void 0;
+					var accept = _this4.tokenize;
 
-				return [new _token3.default('block', tokens, start.offset), this.accept_conditional_operator];
+					while (block.length > 0) {
+						try {
+							var _accept$call = accept.call(_this4, block);
+
+							var _accept$call2 = _slicedToArray(_accept$call, 2);
+
+							token = _accept$call2[0];
+							accept = _accept$call2[1];
+
+							tokens.push(token);
+						} catch (e) {
+							_this4.emit('error', token);
+						}
+					}
+
+					tokens.unshift(new _token2.default(['operator', 'leftparen'], start.value, start.offset));
+					if (end) {
+						tokens.push(new _token2.default(['operator', 'rightparen'], end.value, end.offset));
+					}
+
+					return {
+						v: [new _token2.default('block', tokens, start.offset), _this4.accept_conditional_operator]
+					};
+				}();
+
+				if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_block);
@@ -579,14 +582,17 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Mode = function (_Emitter) {
 	_inherits(Mode, _Emitter);
 
-	function Mode() {
+	function Mode(setup) {
 		_classCallCheck(this, Mode);
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Mode).call(this));
 
-		_this.lexemes = [];
-		_this.keywords = [];
-		_this.index;
+		_this.keywords = setup.keywords || {};
+		_this.operators = setup.operators || {};
+		_this.symbols = setup.symbols || {};
+
+		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators));
+
 		return _this;
 	}
 
@@ -594,40 +600,54 @@ var Mode = function (_Emitter) {
 		key: 'consume',
 		value: function consume(lexemes, condition) {
 
-			var item = void 0;
+			var lexeme = void 0;
 			var slice = [];
 
-			while (item = lexemes.shift()) {
-				slice.push(item);
-				if (condition(item)) return slice;
+			while (lexeme = lexemes.shift()) {
+				slice.push(lexeme);
+				if (condition(lexeme)) return slice;
 			}
 
 			return slice;
 		}
 	}, {
+		key: 'match',
+		value: function match(lexemes, value) {
+			return lexemes[0] && lexemes[0].value === value;
+		}
+	}, {
+		key: 'includes',
+		value: function includes(lexemes, list) {
+			return lexemes[0] && list.includes(lexemes[0].value);
+		}
+	}, {
+		key: 'consume_exclusive',
+		value: function consume_exclusive(lexemes, condition) {
+
+			var lexeme = void 0;
+			var slice = [];
+
+			while (lexeme = lexemes.shift()) {
+				if (condition(lexeme)) {
+					this.revert(lexemes, lexeme);
+					return slice;
+				}
+				slice.push(lexeme);
+			}
+
+			return slice;
+		}
+	}, {
+		key: 'revert',
+		value: function revert(lexemes, lexeme) {
+			lexemes.unshift(lexeme);
+			return this;
+		}
+	}, {
 		key: 'tokenize',
-		value: function tokenize(lexeme, list) {
-			return this.get_token('unknown', lexeme);
-		}
-	}, {
-		key: 'get_token',
-		value: function get_token(type, lexeme) {
-			return new _token2.default(type, lexeme.value, lexeme.offset);
-		}
-	}, {
-		key: 'get_lexeme',
-		value: function get_lexeme(value, offset) {
-			return new _lexeme2.default(value, offset);
-		}
-	}, {
-		key: 'set_index',
-		value: function set_index(value) {
-			this.index = value;
-		}
-	}, {
-		key: 'get_index',
-		value: function get_index() {
-			return this.index;
+		value: function tokenize(lexemes) {
+			var lexeme = lexemes.shift();
+			return [new _token2.default('unknown', lexeme.value, lexeme.offset), this.tokenize];
 		}
 	}]);
 

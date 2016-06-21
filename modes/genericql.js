@@ -8,42 +8,43 @@ if (!Object.values) {
 	Object.values = (o) => Object.keys(o).map(K => o[K]);
 }
 
-const operators = {
-	'equals': '=',
-	'negate': '!',
-	'higher-than': '>',
-	'lower-than': '<',
-	'not-equals': '!=',
-	'lower-than-or-equals': '<=',
-	'higher-than-or-equals': '>=',
-	'regex-match': '~',
-	'not-regex-match': '!~',
-	'dot': '.',
-	'slash': '/',
-};
-
-const syntax_map = {
-	'string': '"',
-	'leftbracket': '[',
-	'rightbracket': ']',
-	'leftparen': '(',
-	'rightparen': ')',
-	'leftbrace': '{',
-	'rightbrace': '}'
-};
-
 export default class GenericQLMode extends Mode {
 
 	constructor () {
 
-		super();
+		super({
 
-		this.lexemes = Object.values(syntax_map)
-			.concat(Object.values(operators));
+			keywords: [
+				'and',
+				'or'
+			],
 
-		this.keywords = [
-			'and', 'or'
-		];
+			operators: {
+
+				'equals': '=',
+				'negate': '!',
+				'higher than': '>',
+				'lower than': '<',
+				'not equals': '!=',
+				'lower than or equals': '<=',
+				'higher than-or equals': '>=',
+				'regex match': '~',
+				'not regex match': '!~',
+				'dot': '.',
+				'slash': '/',
+			},
+
+			symbols: {
+				'string': '"',
+				'leftbracket': '[',
+				'rightbracket': ']',
+				'leftparen': '(',
+				'rightparen': ')',
+				'leftbrace': '{',
+				'rightbrace': '}'
+			}
+
+		});
 
 	}
 
@@ -189,22 +190,20 @@ export default class GenericQLMode extends Mode {
 
 	accept_binary_operator (lexemes) {
 
-		let opkeys = Object.values(operators)
-		if (opkeys.includes(lexemes[0].value)) {
+		let opsyms = Object.values(this.operators)
+		if (this.includes(lexemes, opsyms)) {
 
 			/**
-			 * Stream valid operator lexemes until we find one that isn't, backup the
-			 * stream and then validate the built operator
+			 * Consume valid operator lexemes until we find one that isn't, and then
+			 * validate the built operator
 			 */
-			let offset = lexemes[0].offset;
-			let op = this.consume(lexemes, L => (!opkeys.includes(L.value)));
-			lexemes.unshift(op.pop());
+			let operator = this.consume_exclusive(lexemes, L => (!opsyms.includes(L.value)));
+			let value = operator.map(L => L.value).join('');
 
-			let value = op.map(L => L.value).join('');
-			if (Object.values(operators).includes(value)) {
-				let subtype = Object.keys(operators)[Object.values(operators).indexOf(value)];
+			if (opsyms.includes(value)) {
+				let subtype = Object.keys(this.operators)[opsyms.indexOf(value)];
 				return [
-					new Token(['operator', subtype], value, offset),
+					new Token(['operator', subtype], value, operator[0].offset),
 					this.accept_variable
 				];
 			} else {
@@ -220,25 +219,23 @@ export default class GenericQLMode extends Mode {
 
 	accept_regexp (lexemes) {
 
-		if (lexemes[0].value === operators.slash) {
+		if (this.match(lexemes, this.operators.slash)) {
 
 			/**
 			 * Stream lexemes until we find the end of the string
 			 */
-			let offset = lexemes[0].offset;
 
 			let regex = [lexemes.shift()].concat(
-				this.consume(lexemes, (L) => (L.value === operators.slash))
+				this.consume(lexemes, L => (L.value === this.operators.slash)),
+				this.consume_exclusive(lexemes, L => (!L.value.match(/^[gimuy]+$/)))
 			);
-
-			let flags = [lexemes.shift()].concat(
-				this.consume(lexemes, (L) => (!L.value.match(/\w+/)))
-			);
-
-			let value = regex.map(L => L.value).join('') + flags.map(L => L.value).join('');
 
 			return [
-				new Token('regexp', value, offset),
+				new Token(
+					'regexp',
+					regex.map(L => L.value).join(''),
+					regex[0].offset
+				),
 				this.accept_conditional_operator
 			];
 
@@ -250,14 +247,14 @@ export default class GenericQLMode extends Mode {
 
 	accept_string (lexemes) {
 
-		if (lexemes[0].value === syntax_map.string) {
+		if (this.match(lexemes, this.symbols.string)) {
 
 			/**
 			 * Stream lexemes until we find the end of the string
 			 */
 			let offset = lexemes[0].offset;
 			let string = [lexemes.shift()].concat(
-				this.consume(lexemes, (L) => (L.value === syntax_map.string))
+				this.consume(lexemes, (L) => (L.value === this.symbols.string))
 			);
 
 			return [
@@ -273,7 +270,7 @@ export default class GenericQLMode extends Mode {
 
 	accept_conditional_operator (lexemes) {
 
-		if (this.keywords.includes(lexemes[0].value)) {
+		if (this.includes(lexemes, this.keywords)) {
 			let lexeme = lexemes.shift();
 			return [
 				new Token(['operator', lexeme.value], lexeme.value, lexeme.offset),
@@ -319,13 +316,19 @@ export default class GenericQLMode extends Mode {
 
 	accept_block (lexemes) {
 
-		if (lexemes[0].value === syntax_map.leftparen) {
+		if (this.match(lexemes, this.symbols.leftparen)) {
 
 			let start = lexemes.shift();
-			let block = this.consume(lexemes, (L) => (L.value === syntax_map.rightparen));
+			let depth = 0;
+			let block = this.consume(lexemes, (L) => {
+				if (L.value === this.symbols.rightparen && depth === 0) return true;
+				else if (L.value === this.symbols.rightparen) depth--;
+				else if (L.value === this.symbols.leftparen) depth++;
+				return false;
+			});
 			let end = block.pop();
 
-			if (end.value !== syntax_map.rightparen) {
+			if (end.value !== this.symbols.rightparen) {
 				block.push(end);
 				end = null;
 			}

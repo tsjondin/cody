@@ -6,45 +6,71 @@ import Emitter from './emitter';
 
 export default class Mode extends Emitter {
 
-	constructor () {
+	constructor (setup) {
+
 		super();
-		this.lexemes = [];
-		this.keywords = [];
-		this.index;
+
+		this.keywords = setup.keywords || {};
+		this.operators = setup.operators || {};
+		this.symbols = setup.symbols || {};
+
+		this.lexemes = [].concat(
+			Object.values(this.symbols),
+			Object.values(this.operators)
+		);
+
 	}
 
 	consume (lexemes, condition) {
 
-		let item;
+		let lexeme;
 		let slice = [];
 
-		while (item = lexemes.shift()) {
-			slice.push(item);
-			if (condition(item)) return slice;
+		while (lexeme = lexemes.shift()) {
+			slice.push(lexeme);
+			if (condition(lexeme)) return slice;
 		}
 
 		return slice;
 
 	}
 
-	tokenize (lexeme, list) {
-		return this.get_token('unknown', lexeme);
+	match (lexemes, value) {
+		return (lexemes[0] && lexemes[0].value === value);
 	}
 
-	get_token (type, lexeme) {
-		return new Token(type, lexeme.value, lexeme.offset);
+	includes (lexemes, list) {
+		return (lexemes[0] && list.includes(lexemes[0].value));
 	}
 
-	get_lexeme (value, offset) {
-		return new Lexeme(value, offset);
+	consume_exclusive (lexemes, condition) {
+
+		let lexeme;
+		let slice = [];
+
+		while (lexeme = lexemes.shift()) {
+			if (condition(lexeme)) {
+				this.revert(lexemes, lexeme);
+				return slice;
+			}
+			slice.push(lexeme);
+		}
+
+		return slice;
+
 	}
 
-	set_index (value) {
-		this.index = value;
+	revert (lexemes, lexeme) {
+		lexemes.unshift(lexeme);
+		return this;
 	}
 
-	get_index () {
-		return this.index;
+	tokenize (lexemes) {
+		let lexeme = lexemes.shift();
+		return [
+			new Token('unknown', lexeme.value, lexeme.offset),
+			this.tokenize
+		];
 	}
 
 }

@@ -523,14 +523,17 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Mode = function (_Emitter) {
 	_inherits(Mode, _Emitter);
 
-	function Mode() {
+	function Mode(setup) {
 		_classCallCheck(this, Mode);
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Mode).call(this));
 
-		_this.lexemes = [];
-		_this.keywords = [];
-		_this.index;
+		_this.keywords = setup.keywords || {};
+		_this.operators = setup.operators || {};
+		_this.symbols = setup.symbols || {};
+
+		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators));
+
 		return _this;
 	}
 
@@ -538,40 +541,54 @@ var Mode = function (_Emitter) {
 		key: 'consume',
 		value: function consume(lexemes, condition) {
 
-			var item = void 0;
+			var lexeme = void 0;
 			var slice = [];
 
-			while (item = lexemes.shift()) {
-				slice.push(item);
-				if (condition(item)) return slice;
+			while (lexeme = lexemes.shift()) {
+				slice.push(lexeme);
+				if (condition(lexeme)) return slice;
 			}
 
 			return slice;
 		}
 	}, {
+		key: 'match',
+		value: function match(lexemes, value) {
+			return lexemes[0] && lexemes[0].value === value;
+		}
+	}, {
+		key: 'includes',
+		value: function includes(lexemes, list) {
+			return lexemes[0] && list.includes(lexemes[0].value);
+		}
+	}, {
+		key: 'consume_exclusive',
+		value: function consume_exclusive(lexemes, condition) {
+
+			var lexeme = void 0;
+			var slice = [];
+
+			while (lexeme = lexemes.shift()) {
+				if (condition(lexeme)) {
+					this.revert(lexemes, lexeme);
+					return slice;
+				}
+				slice.push(lexeme);
+			}
+
+			return slice;
+		}
+	}, {
+		key: 'revert',
+		value: function revert(lexemes, lexeme) {
+			lexemes.unshift(lexeme);
+			return this;
+		}
+	}, {
 		key: 'tokenize',
-		value: function tokenize(lexeme, list) {
-			return this.get_token('unknown', lexeme);
-		}
-	}, {
-		key: 'get_token',
-		value: function get_token(type, lexeme) {
-			return new _token2.default(type, lexeme.value, lexeme.offset);
-		}
-	}, {
-		key: 'get_lexeme',
-		value: function get_lexeme(value, offset) {
-			return new _lexeme2.default(value, offset);
-		}
-	}, {
-		key: 'set_index',
-		value: function set_index(value) {
-			this.index = value;
-		}
-	}, {
-		key: 'get_index',
-		value: function get_index() {
-			return this.index;
+		value: function tokenize(lexemes) {
+			var lexeme = lexemes.shift();
+			return [new _token2.default('unknown', lexeme.value, lexeme.offset), this.tokenize];
 		}
 	}]);
 
