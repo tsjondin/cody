@@ -184,7 +184,9 @@ export default class HTML extends Context {
 		}
 
 		offset = ((last.textContent.length) + offset) - 1;
-		return last;
+		if (last.childNodes[0]) last = last.childNodes[0];
+
+		return [last, offset];
 
 	}
 
@@ -192,17 +194,15 @@ export default class HTML extends Context {
 
 		let selection = getSelection();
 		let range = document.createRange();
-		let focus = this.get_cursor_offset_node(offset);
-
-		let focusnode = focus.childNodes[0];
-		if (!focusnode) focusnode = focus;
+		let [focus, focus_offset] = this.get_cursor_offset_node(offset);
 
 		try {
-			range.setStart(focusnode, offset);
+			range.setStart(focus, focus_offset);
 		} catch (e) {
+			console.log("fial");
 			/* Likely an invalid offset error, set to end of focus node, this should
 			 * never happen but it currently does */
-			range.setStart(focusnode, focus.textContent.length);
+			range.setStart(focus, focus.textContent.length);
 		}
 
 		selection.removeAllRanges();
