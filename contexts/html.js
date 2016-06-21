@@ -1,14 +1,14 @@
-
 "use strict";
 
 import Context from '../src/context';
-import Item from '../src/item';
-
 export default class HTML extends Context {
 
 	constructor (editor, options) {
 
 		super(editor, options);
+
+		let pre_offset = 0;
+		let length_diff = 0;
 
 		this.node = options.node;
 		this.node.className = 'cody';
@@ -23,20 +23,25 @@ export default class HTML extends Context {
 			this.node.classList.add('cody-valid');
 		});
 
-		let length_down;
-		this.length_diff = 0;
-
-		this.node.addEventListener('keydown', () => {
-			length_down = this.node.textContent.length;
-		});
-
-		this.node.addEventListener('keyup', () => {
-			this.length_diff = this.node.textContent.length - length_down;
-			this.editor.do_update(this.node.textContent);
+		let do_update = false;
+		this.node.addEventListener('keydown', event => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				return false;
+			} else if (!event.key.match(/^Arrow/)) {
+				pre_offset = this.get_cursor_offset();
+				length_diff = this.node.textContent.length;
+				do_update = true;
+				console.log("do update");
+			}
 		});
 
 		let cursor_marked;
-		this.node.addEventListener('keyup', () => {
+		this.node.addEventListener('keyup', event => {
+
+			if (do_update) {
+				this.editor.do_update(this.node.textContent);
+			}
 
 			let cursor_node = this.get_cursor_node();
 
@@ -48,6 +53,15 @@ export default class HTML extends Context {
 			if (cursor_node.nodeName === '#text') {
 				cursor_marked = cursor_node.parentElement;
 				this.set_element_mark(cursor_marked);
+			}
+
+		});
+
+		this.editor.on('postrender', () => {
+			if (do_update) {
+				let diff = this.node.textContent.length - length_diff;
+				this.set_cursor_offset(pre_offset + diff);
+				do_update = false;
 			}
 		});
 
@@ -102,50 +116,46 @@ export default class HTML extends Context {
 		}
 	}
 
-	get_render (item) {
+	get_render (token) {
 
 		let node = document.createElement('span');
-		let classes = item.get_classes();
+		let classes = token.type;
 
-		classes.unshift('cody-item');
-		classes = classes.concat(
-			item.get_type().map(C => ('cody-' + C))
-		);
+		classes.unshift('token');
+		classes = classes.map(C => ('cody-' + C));
 
 		node.className = classes.join(' ');
 
-		if (Array.isArray(item.value)) {
-			item.value.map(
-				token => this.get_render(new Item(token))
+		if (Array.isArray(token.value)) {
+			token.value.map(
+				token => this.get_render(token)
 			).map(node.appendChild.bind(node));
 		} else {
-			node.textContent = item.value;
-			node.setAttribute('data-value', item.value);
+			node.textContent = token.value;
+			node.setAttribute('data-value', token.value);
 		}
 
 		return node;
 
 	}
 
-	do_render (items) {
+	do_render (tokens) {
 
 		window.requestAnimationFrame(() => {
 
-			let offset = this.get_cursor_offset();
-
 			this.node.innerHTML = "";
 
-			items.forEach(item => {
-				this.node.appendChild(this.get_render(item));
+			tokens.forEach(token => {
+				if (token.type.includes('end')) return;
+				this.node.appendChild(
+					this.get_render(token)
+				);
 			});
 
-			if (this.length_diff < 0) {
-				this.set_cursor_offset(offset - this.length_diff);
-			} else {
-				this.set_cursor_offset(offset + this.length_diff);
-			}
+			this.editor.emit('postrender');
 
 		});
+
 	}
 
 	get_cursor_node () {
@@ -171,7 +181,11 @@ export default class HTML extends Context {
 		let children = Array.prototype.slice.call(this.node.children, 0);
 		let last;
 
-		while (offset > 0) {
+		if (children.length === 0) {
+			return [this.node, 0];
+		}
+
+		while (offset >= 0) {
 			if (children.length === 0) break;
 			else {
 				last = children.shift();
@@ -183,7 +197,7 @@ export default class HTML extends Context {
 			}
 		}
 
-		offset = ((last.textContent.length) + offset) - 1;
+		offset = ((last.textContent.length) + offset);
 		if (last.childNodes[0]) last = last.childNodes[0];
 
 		return [last, offset];
@@ -199,7 +213,6 @@ export default class HTML extends Context {
 		try {
 			range.setStart(focus, focus_offset);
 		} catch (e) {
-			console.log("fial");
 			/* Likely an invalid offset error, set to end of focus node, this should
 			 * never happen but it currently does */
 			range.setStart(focus, focus.textContent.length);

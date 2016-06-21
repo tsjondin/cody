@@ -29,10 +29,6 @@ var _context = require('./src/context');
 
 var _context2 = _interopRequireDefault(_context);
 
-var _item = require('./src/item');
-
-var _item2 = _interopRequireDefault(_item);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -73,55 +69,25 @@ var Cody = function (_Emitter) {
 	}
 
 	_createClass(Cody, [{
-		key: 'get_diff',
-		value: function get_diff(L1, L2) {
-			return [].concat(L1.reduce(function (D, L, i) {
-				if (!L2[i] || L.value !== L2[i].value || L.offset !== L2[i].offset) D.push(L);
-				return D;
-			}, []), L2.reduce(function (D, L, i) {
-				if (!L1[i] || L.value !== L1[i].value || L.offset !== L1[i].offset) D.push(L);
-				return D;
-			}, []));
-		}
-	}, {
 		key: 'do_update',
 		value: function do_update(text) {
-			var _this2 = this;
-
 			var force = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
 
-			if (!force) {
+			this.stream = new _stream2.default(text);
+			this.lexemes = this.lexer.scan(this.stream);
 
-				var diff = void 0;
-
-				if (text === this.stream.buffer) return;
-				this.stream = new _stream2.default(text);
-
-				var new_lexemes = this.lexer.scan(this.stream);
-				if ((diff = this.get_diff(this.lexemes, new_lexemes)).length === 0) return;
-				this.lexemes = new_lexemes;
-			} else {
-				this.stream = new _stream2.default(text);
-				this.lexemes = this.lexer.scan(stream);
-			}
-
-			var items = [];
+			var tokens = void 0,
+			    issues = void 0;
 
 			try {
 				var _lexer$evaluate = this.lexer.evaluate(this.lexemes);
 
 				var _lexer$evaluate2 = _slicedToArray(_lexer$evaluate, 2);
 
-				var tokens = _lexer$evaluate2[0];
-				var issues = _lexer$evaluate2[1];
+				tokens = _lexer$evaluate2[0];
+				issues = _lexer$evaluate2[1];
 
-
-				items = tokens.map(function (token) {
-					var item = new _item2.default(token);
-					_this2.emit('item', item);
-					return item;
-				});
 
 				if (issues.length > 0) {
 					this.emit('invalid', issues);
@@ -132,7 +98,7 @@ var Cody = function (_Emitter) {
 				this.emit('error', e);
 			}
 
-			this.context.do_render(items);
+			this.context.do_render(tokens);
 			return this;
 		}
 	}]);
@@ -143,7 +109,7 @@ var Cody = function (_Emitter) {
 Cody.Contexts = {};
 exports.default = Cody;
 
-},{"./src/context":2,"./src/emitter":3,"./src/item":4,"./src/lexer":6,"./src/mode":7,"./src/stream":8}],2:[function(require,module,exports){
+},{"./src/context":2,"./src/emitter":3,"./src/lexer":5,"./src/mode":6,"./src/stream":7}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -257,71 +223,6 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Item = function () {
-	function Item(token) {
-		_classCallCheck(this, Item);
-
-		this.type = token.type;
-		this.value = token.value;
-		this.offset = token.offset;
-
-		this.classes = [];
-		this.attr = {};
-	}
-
-	_createClass(Item, [{
-		key: "set_attribute",
-		value: function set_attribute(key, value) {
-			if (typeof value === 'undefined') delete this.attr[key];else this.attr[key] = value;
-			return this;
-		}
-	}, {
-		key: "get_attribute",
-		value: function get_attribute(key) {
-			return this.attr[key];
-		}
-	}, {
-		key: "get_type",
-		value: function get_type() {
-			return this.type;
-		}
-	}, {
-		key: "add_class",
-		value: function add_class(name) {
-			if (!this.classes.includes(name)) this.classes.push(name);
-			return this;
-		}
-	}, {
-		key: "remove_class",
-		value: function remove_class(name) {
-			this.classes = this.classes.filter(function (C) {
-				return C != name;
-			});
-			return this;
-		}
-	}, {
-		key: "get_classes",
-		value: function get_classes() {
-			return this.classes.slice(0);
-		}
-	}]);
-
-	return Item;
-}();
-
-exports.default = Item;
-
-},{}],5:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Lexeme = function Lexeme(value, offset, lexemes) {
@@ -333,7 +234,7 @@ var Lexeme = function Lexeme(value, offset, lexemes) {
 
 exports.default = Lexeme;
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -501,7 +402,7 @@ var Lexer = function (_Emitter) {
 
 exports.default = Lexer;
 
-},{"./emitter":3,"./lexeme":5,"./token":9}],7:[function(require,module,exports){
+},{"./emitter":3,"./lexeme":4,"./token":8}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -612,7 +513,7 @@ var Mode = function (_Emitter) {
 
 exports.default = Mode;
 
-},{"./emitter":3,"./lexeme":5,"./token":9}],8:[function(require,module,exports){
+},{"./emitter":3,"./lexeme":4,"./token":8}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -662,7 +563,7 @@ var Stream = function () {
 
 exports.default = Stream;
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

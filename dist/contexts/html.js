@@ -1,5 +1,4 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g=(g.Cody||(g.Cody = {}));g=(g.Contexts||(g.Contexts = {}));g.html = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -13,10 +12,6 @@ var _createClass = function () { function defineProperties(target, props) { for 
 var _context = require('../src/context');
 
 var _context2 = _interopRequireDefault(_context);
-
-var _item = require('../src/item');
-
-var _item2 = _interopRequireDefault(_item);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -34,6 +29,9 @@ var HTML = function (_Context) {
 
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(HTML).call(this, editor, options));
 
+		var pre_offset = 0;
+		var length_diff = 0;
+
 		_this.node = options.node;
 		_this.node.className = 'cody';
 
@@ -47,20 +45,25 @@ var HTML = function (_Context) {
 			_this.node.classList.add('cody-valid');
 		});
 
-		var length_down = void 0;
-		_this.length_diff = 0;
-
-		_this.node.addEventListener('keydown', function () {
-			length_down = _this.node.textContent.length;
-		});
-
-		_this.node.addEventListener('keyup', function () {
-			_this.length_diff = _this.node.textContent.length - length_down;
-			_this.editor.do_update(_this.node.textContent);
+		var do_update = false;
+		_this.node.addEventListener('keydown', function (event) {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				return false;
+			} else if (!event.key.match(/^Arrow/)) {
+				pre_offset = _this.get_cursor_offset();
+				length_diff = _this.node.textContent.length;
+				do_update = true;
+				console.log("do update");
+			}
 		});
 
 		var cursor_marked = void 0;
-		_this.node.addEventListener('keyup', function () {
+		_this.node.addEventListener('keyup', function (event) {
+
+			if (do_update) {
+				_this.editor.do_update(_this.node.textContent);
+			}
 
 			var cursor_node = _this.get_cursor_node();
 
@@ -72,6 +75,14 @@ var HTML = function (_Context) {
 			if (cursor_node.nodeName === '#text') {
 				cursor_marked = cursor_node.parentElement;
 				_this.set_element_mark(cursor_marked);
+			}
+		});
+
+		_this.editor.on('postrender', function () {
+			if (do_update) {
+				var diff = _this.node.textContent.length - length_diff;
+				_this.set_cursor_offset(pre_offset + diff);
+				do_update = false;
 			}
 		});
 
@@ -133,50 +144,45 @@ var HTML = function (_Context) {
 		}
 	}, {
 		key: 'get_render',
-		value: function get_render(item) {
+		value: function get_render(token) {
 			var _this2 = this;
 
 			var node = document.createElement('span');
-			var classes = item.get_classes();
+			var classes = token.type;
 
-			classes.unshift('cody-item');
-			classes = classes.concat(item.get_type().map(function (C) {
+			classes.unshift('token');
+			classes = classes.map(function (C) {
 				return 'cody-' + C;
-			}));
+			});
 
 			node.className = classes.join(' ');
 
-			if (Array.isArray(item.value)) {
-				item.value.map(function (token) {
-					return _this2.get_render(new _item2.default(token));
+			if (Array.isArray(token.value)) {
+				token.value.map(function (token) {
+					return _this2.get_render(token);
 				}).map(node.appendChild.bind(node));
 			} else {
-				node.textContent = item.value;
-				node.setAttribute('data-value', item.value);
+				node.textContent = token.value;
+				node.setAttribute('data-value', token.value);
 			}
 
 			return node;
 		}
 	}, {
 		key: 'do_render',
-		value: function do_render(items) {
+		value: function do_render(tokens) {
 			var _this3 = this;
 
 			window.requestAnimationFrame(function () {
 
-				var offset = _this3.get_cursor_offset();
-
 				_this3.node.innerHTML = "";
 
-				items.forEach(function (item) {
-					_this3.node.appendChild(_this3.get_render(item));
+				tokens.forEach(function (token) {
+					if (token.type.includes('end')) return;
+					_this3.node.appendChild(_this3.get_render(token));
 				});
 
-				if (_this3.length_diff < 0) {
-					_this3.set_cursor_offset(offset - _this3.length_diff);
-				} else {
-					_this3.set_cursor_offset(offset + _this3.length_diff);
-				}
+				_this3.editor.emit('postrender');
 			});
 		}
 	}, {
@@ -205,7 +211,11 @@ var HTML = function (_Context) {
 			var children = Array.prototype.slice.call(this.node.children, 0);
 			var last = void 0;
 
-			while (offset > 0) {
+			if (children.length === 0) {
+				return [this.node, 0];
+			}
+
+			while (offset >= 0) {
 				if (children.length === 0) break;else {
 					last = children.shift();
 					if (last.children.length > 0) {
@@ -216,7 +226,7 @@ var HTML = function (_Context) {
 				}
 			}
 
-			offset = last.textContent.length + offset - 1;
+			offset = last.textContent.length + offset;
 			if (last.childNodes[0]) last = last.childNodes[0];
 
 			return [last, offset];
@@ -239,7 +249,6 @@ var HTML = function (_Context) {
 			try {
 				range.setStart(focus, focus_offset);
 			} catch (e) {
-				console.log("fial");
 				/* Likely an invalid offset error, set to end of focus node, this should
      * never happen but it currently does */
 				range.setStart(focus, focus.textContent.length);
@@ -255,7 +264,7 @@ var HTML = function (_Context) {
 
 exports.default = HTML;
 
-},{"../src/context":2,"../src/item":3}],2:[function(require,module,exports){
+},{"../src/context":2}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -294,71 +303,6 @@ var Context = function () {
 }();
 
 exports.default = Context;
-
-},{}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Item = function () {
-	function Item(token) {
-		_classCallCheck(this, Item);
-
-		this.type = token.type;
-		this.value = token.value;
-		this.offset = token.offset;
-
-		this.classes = [];
-		this.attr = {};
-	}
-
-	_createClass(Item, [{
-		key: "set_attribute",
-		value: function set_attribute(key, value) {
-			if (typeof value === 'undefined') delete this.attr[key];else this.attr[key] = value;
-			return this;
-		}
-	}, {
-		key: "get_attribute",
-		value: function get_attribute(key) {
-			return this.attr[key];
-		}
-	}, {
-		key: "get_type",
-		value: function get_type() {
-			return this.type;
-		}
-	}, {
-		key: "add_class",
-		value: function add_class(name) {
-			if (!this.classes.includes(name)) this.classes.push(name);
-			return this;
-		}
-	}, {
-		key: "remove_class",
-		value: function remove_class(name) {
-			this.classes = this.classes.filter(function (C) {
-				return C != name;
-			});
-			return this;
-		}
-	}, {
-		key: "get_classes",
-		value: function get_classes() {
-			return this.classes.slice(0);
-		}
-	}]);
-
-	return Item;
-}();
-
-exports.default = Item;
 
 },{}]},{},[1])(1)
 });

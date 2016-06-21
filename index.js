@@ -6,8 +6,6 @@ import Emitter from './src/emitter';
 import Mode from './src/mode';
 import Context from './src/context';
 
-import Item from './src/item';
-
 class Cody extends Emitter {
 
 	constructor (options) {
@@ -33,52 +31,18 @@ class Cody extends Emitter {
 
 	}
 
-	get_diff (L1, L2) {
-		return [].concat(
-			L1.reduce((D, L, i) => {
-				if (!L2[i] || L.value !== L2[i].value || L.offset !== L2[i].offset)
-					D.push(L);
-				return D;
-			}, []),
-			L2.reduce((D, L, i) => {
-				if (!L1[i] || L.value !== L1[i].value || L.offset !== L1[i].offset)
-					D.push(L);
-				return D;
-			}, [])
-		);
-	}
-
 	do_update (text, force = false) {
 
-		if (!force) {
+		this.stream = new Stream(text);
+		this.lexemes = this.lexer.scan(this.stream);
 
-			let diff;
-
-			if (text === this.stream.buffer) return;
-			this.stream = new Stream(text);
-
-			let new_lexemes = this.lexer.scan(this.stream);
-			if ((diff = this.get_diff(this.lexemes, new_lexemes)).length === 0) return;
-			this.lexemes = new_lexemes;
-
-		} else {
-			this.stream = new Stream(text);
-			this.lexemes = this.lexer.scan(stream);
-		}
-
-		let items = [];
+		let tokens, issues;
 
 		try {
 
-			let [tokens, issues] = this.lexer.evaluate(
+			[tokens, issues] = this.lexer.evaluate(
 				this.lexemes
 			);
-
-			items = tokens.map(token => {
-				let item = new Item(token);
-				this.emit('item', item);
-				return item;
-			});
 
 			if (issues.length > 0) {
 				this.emit('invalid', issues);
@@ -90,7 +54,7 @@ class Cody extends Emitter {
 			this.emit('error', e);
 		}
 
-		this.context.do_render(items);
+		this.context.do_render(tokens);
 		return this;
 
 	}
