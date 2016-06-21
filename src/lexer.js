@@ -55,7 +55,7 @@ export default class Lexer extends Emitter {
 
 				lexemes.push(new_lexeme(ch, stream));
 
-			} else if (ch === ' ') {
+			} else if (ch === ' ' || ch.match(/\r|\r\n/)) {
 
 
 				if (value.length > 0) {

@@ -19,9 +19,9 @@ var _token = require('../src/token');
 
 var _token2 = _interopRequireDefault(_token);
 
-var _lexeme = require('../src/lexeme');
+var _lexeme2 = require('../src/lexeme');
 
-var _lexeme2 = _interopRequireDefault(_lexeme);
+var _lexeme3 = _interopRequireDefault(_lexeme2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -91,9 +91,13 @@ var GenericQLMode = function (_Mode) {
 	}, {
 		key: 'handle_whitespace',
 		value: function handle_whitespace(lexemes, accept) {
-			if (lexemes[0].value.match(/^\s+$/)) {
+			if (lexemes[0].value.match(/^(\n|\r\n)$/)) {
+				console.log("newline");
 				var lexeme = lexemes.shift();
-				return [new _token2.default('whitespace', lexeme.value, lexeme.offset), accept];
+				return [new _token2.default('newline', lexeme.value, lexeme.offset), accept];
+			} else if (lexemes[0].value.match(/^\s+$/)) {
+				var _lexeme = lexemes.shift();
+				return [new _token2.default('whitespace', _lexeme.value, _lexeme.offset), accept];
 			} else {
 				return this.handle_invalid(lexemes);
 			}
@@ -110,7 +114,7 @@ var GenericQLMode = function (_Mode) {
 
 
 			if (token.type.includes('whitespace')) return [token, this.accept_value];else if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				lexemes.unshift(new _lexeme3.default(token.value, token.offset));
 
 				var _accept_number = this.accept_number(lexemes);
 
@@ -120,7 +124,7 @@ var GenericQLMode = function (_Mode) {
 				accept = _accept_number2[1];
 
 				if (token.invalid) {
-					lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+					lexemes.unshift(new _lexeme3.default(token.value, token.offset));
 
 					var _accept_regexp = this.accept_regexp(lexemes);
 
@@ -146,7 +150,7 @@ var GenericQLMode = function (_Mode) {
 
 			if (token.type.includes('whitespace')) return [token, this.accept_variable];
 			if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				lexemes.unshift(new _lexeme3.default(token.value, token.offset));
 
 				var _accept_value = this.accept_value(lexemes);
 
@@ -182,7 +186,7 @@ var GenericQLMode = function (_Mode) {
 
 				var tokens = [];
 
-				lexemes.unshift(new _lexeme2.default(token_block.value, token_block.offset));
+				lexemes.unshift(new _lexeme3.default(token_block.value, token_block.offset));
 
 				var _accept_variable = this.accept_variable(lexemes);
 
@@ -230,7 +234,7 @@ var GenericQLMode = function (_Mode) {
 				}
 
 				if (!token_op.type.includes('operator')) {
-					lexemes.unshift(new _lexeme2.default(token_op.value, token_op.offset));
+					lexemes.unshift(new _lexeme3.default(token_op.value, token_op.offset));
 					return [new _token2.default('expression', tokens, tokens[0].offset), this.accept_operator];
 				}
 				tokens.push(token_op);
@@ -274,7 +278,7 @@ var GenericQLMode = function (_Mode) {
 
 
 			if (token.type.includes('whitespace')) return [token, this.accept_operator];else if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				lexemes.unshift(new _lexeme3.default(token.value, token.offset));
 
 				var _accept_binary_operat5 = this.accept_binary_operator(lexemes);
 
@@ -308,7 +312,7 @@ var GenericQLMode = function (_Mode) {
 					var subtype = Object.keys(this.operators)[opsyms.indexOf(value)];
 					return [new _token2.default(['operator', subtype], value, operator[0].offset), this.accept_variable];
 				} else {
-					lexemes.unshift(new _lexeme2.default(value, offset));
+					lexemes.unshift(new _lexeme3.default(value, offset));
 					return this.handle_whitespace(lexemes);
 				}
 			}

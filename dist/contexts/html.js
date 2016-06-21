@@ -57,10 +57,79 @@ var HTML = function (_Context) {
 			_this.editor.do_update(_this.node.textContent);
 		});
 
+		var cursor_marked = void 0;
+		_this.node.addEventListener('keyup', function () {
+
+			var cursor_node = _this.get_cursor_node();
+
+			if (cursor_marked) {
+				_this.remove_element_mark(cursor_marked);
+				cursor_marked = null;
+			}
+
+			if (cursor_node.nodeName === '#text') {
+				cursor_marked = cursor_node.parentElement;
+				_this.set_element_mark(cursor_marked);
+			}
+		});
+
+		_this.node.addEventListener('mouseover', function (event) {
+			_this.set_element_mark(event.originalTarget);
+		});
+
+		_this.node.addEventListener('mouseout', function (event) {
+			_this.remove_element_mark(event.originalTarget);
+		});
+
 		return _this;
 	}
 
 	_createClass(HTML, [{
+		key: 'get_elements',
+		value: function get_elements(selector) {
+			var nodes = this.node.querySelectorAll(selector);
+			return Array.prototype.slice.call(nodes, 0);
+		}
+	}, {
+		key: 'get_elements_with_value',
+		value: function get_elements_with_value(value) {
+			return this.get_elements('.cody-variable[data-value="' + value + '"]');
+		}
+	}, {
+		key: 'set_element_mark',
+		value: function set_element_mark(target) {
+			if (target.tagName === 'SPAN') {
+				if (target.classList.contains('cody-variable')) {
+					this.get_elements_with_value(target.getAttribute('data-value')).forEach(function (element) {
+						element.classList.add('cody-mark');
+					});
+				} else if (target.classList.contains('cody-leftparen')) {
+					target.classList.add('cody-mark');
+					target.parentNode.lastChild.classList.add('cody-mark');
+				} else if (target.classList.contains('cody-rightparen')) {
+					target.classList.add('cody-mark');
+					target.parentNode.firstChild.classList.add('cody-mark');
+				}
+			}
+		}
+	}, {
+		key: 'remove_element_mark',
+		value: function remove_element_mark(target) {
+			if (target.tagName === 'SPAN') {
+				if (target.classList.contains('cody-variable')) {
+					this.get_elements_with_value(target.getAttribute('data-value')).forEach(function (element) {
+						element.classList.remove('cody-mark');
+					});
+				} else if (target.classList.contains('cody-leftparen')) {
+					target.classList.remove('cody-mark');
+					target.parentNode.lastChild.classList.remove('cody-mark');
+				} else if (target.classList.contains('cody-rightparen')) {
+					target.classList.remove('cody-mark');
+					target.parentNode.firstChild.classList.remove('cody-mark');
+				}
+			}
+		}
+	}, {
 		key: 'get_render',
 		value: function get_render(item) {
 			var _this2 = this;
@@ -81,6 +150,7 @@ var HTML = function (_Context) {
 				}).map(node.appendChild.bind(node));
 			} else {
 				node.textContent = item.value;
+				node.setAttribute('data-value', item.value);
 			}
 
 			return node;
@@ -106,6 +176,11 @@ var HTML = function (_Context) {
 					_this3.set_cursor_offset(offset + _this3.length_diff);
 				}
 			});
+		}
+	}, {
+		key: 'get_cursor_node',
+		value: function get_cursor_node() {
+			return window.getSelection().focusNode;
 		}
 	}, {
 		key: 'get_cursor_offset',
@@ -146,7 +221,12 @@ var HTML = function (_Context) {
 			}
 
 			offset = last.textContent.length + offset - 1;
-			range.setStart(last.childNodes[0], offset);
+
+			try {
+				range.setStart(last.childNodes[0], offset);
+			} catch (e) {
+				range.setStart(last.childNodes[0], last.textContent.length);
+			}
 
 			selection.removeAllRanges();
 			selection.addRange(range);

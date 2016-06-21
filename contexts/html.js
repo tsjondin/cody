@@ -35,6 +35,71 @@ export default class HTML extends Context {
 			this.editor.do_update(this.node.textContent);
 		});
 
+		let cursor_marked;
+		this.node.addEventListener('keyup', () => {
+
+			let cursor_node = this.get_cursor_node();
+
+			if (cursor_marked) {
+				this.remove_element_mark(cursor_marked);
+				cursor_marked = null;
+			}
+
+			if (cursor_node.nodeName === '#text') {
+				cursor_marked = cursor_node.parentElement;
+				this.set_element_mark(cursor_marked);
+			}
+		});
+
+		this.node.addEventListener('mouseover', event => {
+			this.set_element_mark(event.originalTarget);
+		});
+
+		this.node.addEventListener('mouseout', event => {
+			this.remove_element_mark(event.originalTarget);
+		});
+
+	}
+
+	get_elements (selector) {
+		let nodes = this.node.querySelectorAll(selector);
+		return Array.prototype.slice.call(nodes, 0);
+	}
+
+	get_elements_with_value (value) {
+		return this.get_elements(`.cody-variable[data-value="${value}"]`);
+	}
+
+	set_element_mark (target) {
+		if (target.tagName === 'SPAN') {
+			if (target.classList.contains('cody-variable')) {
+				this.get_elements_with_value(target.getAttribute('data-value')).forEach(element => {
+					element.classList.add('cody-mark');
+				});
+			} else if (target.classList.contains('cody-leftparen')) {
+				target.classList.add('cody-mark');
+				target.parentNode.lastChild.classList.add('cody-mark');
+			} else if (target.classList.contains('cody-rightparen')) {
+				target.classList.add('cody-mark');
+				target.parentNode.firstChild.classList.add('cody-mark');
+			}
+		}
+	}
+
+	remove_element_mark (target) {
+		if (target.tagName === 'SPAN') {
+			if (target.classList.contains('cody-variable')) {
+				this.get_elements_with_value(target.getAttribute('data-value')).forEach(element => {
+					element.classList.remove('cody-mark');
+				});
+			} else if (target.classList.contains('cody-leftparen')) {
+				target.classList.remove('cody-mark');
+				target.parentNode.lastChild.classList.remove('cody-mark');
+			} else if (target.classList.contains('cody-rightparen')) {
+				target.classList.remove('cody-mark');
+				target.parentNode.firstChild.classList.remove('cody-mark');
+			}
+		}
 	}
 
 	get_render (item) {
@@ -55,6 +120,7 @@ export default class HTML extends Context {
 			).map(node.appendChild.bind(node));
 		} else {
 			node.textContent = item.value;
+			node.setAttribute('data-value', item.value);
 		}
 
 		return node;
@@ -80,6 +146,10 @@ export default class HTML extends Context {
 			}
 
 		});
+	}
+
+	get_cursor_node () {
+		return window.getSelection().focusNode;
 	}
 
 	get_cursor_offset () {
@@ -120,7 +190,12 @@ export default class HTML extends Context {
 		}
 
 		offset = ((last.textContent.length) + offset) - 1;
-		range.setStart(last.childNodes[0], offset);
+
+		try {
+			range.setStart(last.childNodes[0], offset);
+		} catch (e) {
+			range.setStart(last.childNodes[0], last.textContent.length);
+		}
 
 		selection.removeAllRanges();
 		selection.addRange(range);

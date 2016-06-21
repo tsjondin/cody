@@ -16,5 +16,5 @@ var editor = new Cody.default({
 });
 
 editor.do_update(
-	`(host.name = "web" or (description ~ /web/ig)) and state != 0`
+	`(host.name = "web" or (description ~ /web/ig)) and name != "hej"`
 );

@@ -424,7 +424,7 @@ var Lexer = function (_Emitter) {
 					}
 
 					lexemes.push(new_lexeme(ch, stream));
-				} else if (ch === ' ') {
+				} else if (ch === ' ' || ch.match(/\r|\r\n/)) {
 
 					if (value.length > 0) {
 						if (ws.length > 0) {

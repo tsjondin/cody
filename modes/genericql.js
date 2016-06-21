@@ -61,7 +61,11 @@ export default class GenericQLMode extends Mode {
 	}
 
 	handle_whitespace (lexemes, accept) {
-		if (lexemes[0].value.match(/^\s+$/)) {
+		if (lexemes[0].value.match(/^(\n|\r\n)$/)) {
+			console.log("newline");
+			let lexeme = lexemes.shift();
+			return [new Token('newline', lexeme.value, lexeme.offset), accept];
+		} else if (lexemes[0].value.match(/^\s+$/)) {
 			let lexeme = lexemes.shift();
 			return [new Token('whitespace', lexeme.value, lexeme.offset), accept];
 		} else {
