@@ -16,7 +16,9 @@ export default class Mode extends Emitter {
 
 		this.lexemes = [].concat(
 			Object.values(this.symbols),
-			Object.values(this.operators)
+			Object.values(this.operators).reduce((syms, op) => {
+				return syms.concat(op.split(''));
+			}, [])
 		);
 
 	}

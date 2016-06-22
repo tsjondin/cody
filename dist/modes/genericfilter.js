@@ -581,7 +581,9 @@ var Mode = function (_Emitter) {
 		_this.operators = setup.operators || {};
 		_this.symbols = setup.symbols || {};
 
-		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators));
+		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators).reduce(function (syms, op) {
+			return syms.concat(op.split(''));
+		}, []));
 
 		return _this;
 	}
