@@ -28,6 +28,7 @@ class Cody extends Emitter {
 
 		this.stream = new Stream("");
 		this.lexemes = [];
+		this.tokens = [];
 
 	}
 
@@ -36,27 +37,16 @@ class Cody extends Emitter {
 		this.stream = new Stream(text);
 		this.lexemes = this.lexer.scan(this.stream);
 
-		let tokens, issues;
-
 		try {
-
-			[tokens, issues] = this.lexer.evaluate(
+			this.tokens = this.lexer.evaluate(
 				this.lexemes
 			);
-
-			if (issues.length > 0) {
-				this.emit('invalid', issues);
-			} else {
-				this.emit('valid');
-			}
-
 		} catch (e) {
-			console.log(e);
 			this.emit('error', e);
 		}
 
 		this.emit('render.before');
-		this.context.do_render(tokens);
+		this.context.do_render(this.tokens);
 		this.emit('render.after');
 		return this;
 

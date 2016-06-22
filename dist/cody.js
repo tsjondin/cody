@@ -5,8 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _lexer = require('./src/lexer');
@@ -64,6 +62,7 @@ var Cody = function (_Emitter) {
 
 		_this.stream = new _stream2.default("");
 		_this.lexemes = [];
+		_this.tokens = [];
 
 		return _this;
 	}
@@ -77,30 +76,14 @@ var Cody = function (_Emitter) {
 			this.stream = new _stream2.default(text);
 			this.lexemes = this.lexer.scan(this.stream);
 
-			var tokens = void 0,
-			    issues = void 0;
-
 			try {
-				var _lexer$evaluate = this.lexer.evaluate(this.lexemes);
-
-				var _lexer$evaluate2 = _slicedToArray(_lexer$evaluate, 2);
-
-				tokens = _lexer$evaluate2[0];
-				issues = _lexer$evaluate2[1];
-
-
-				if (issues.length > 0) {
-					this.emit('invalid', issues);
-				} else {
-					this.emit('valid');
-				}
+				this.tokens = this.lexer.evaluate(this.lexemes);
 			} catch (e) {
-				console.log(e);
 				this.emit('error', e);
 			}
 
 			this.emit('render.before');
-			this.context.do_render(tokens);
+			this.context.do_render(this.tokens);
 			this.emit('render.after');
 			return this;
 		}
@@ -370,7 +353,6 @@ var Lexer = function (_Emitter) {
 			var _this3 = this;
 
 			var tokens = [];
-			var issues = [];
 			var accept = this.mode.tokenize;
 
 			this.mode.on('token', function (token) {
@@ -399,7 +381,7 @@ var Lexer = function (_Emitter) {
 				}
 			}
 
-			return [tokens, issues];
+			return tokens;
 		}
 	}]);
 

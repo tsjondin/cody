@@ -94,7 +94,6 @@ export default class Lexer extends Emitter {
 	evaluate (lexemes) {
 
 		let tokens = [];
-		let issues = [];
 		let accept = this.mode.tokenize;
 
 		this.mode.on('token', token => this.emit('token', token));
@@ -114,7 +113,7 @@ export default class Lexer extends Emitter {
 
 		}
 
-		return [tokens, issues];
+		return tokens;
 
 	}
 
