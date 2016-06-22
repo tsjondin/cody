@@ -144,13 +144,28 @@ purpose. The Token is immutable.
 
 Create a new token
 
-#### string: value
+#### [Token] | [Lexeme]: value
 
-The value of the Token
+The value of the Token, either a list of Lexemes or a list of Tokens, this may
+be confusing, but you can determine a Lexeme from a Token via &lt;Token&gt;.is_token.
+This was done due to some Tokens wanting Tokens as their values, possibly
+lists, blocks and expressions, depending on Mode implementation.
+
+But why not just checking instanceof instead of silly is_token? Good question!
+The Mode is a standalone module that produces Tokens, being that it was bundled with
+its copy of the Token source and the core has its copy, an instance of Token
+produced by the core and one produced by the Mode do not in fact share
+prototype and can therefor not be compared. And while you may perform some
+semi-contrite constructor toString mangling compared instead of is_token, at
+that point it's just apples or slightly other-colored apples.
 
 #### integer: offset
 
 The offset of the Token
+
+#### [String]: type
+
+A list of Token types (for example ['operator', 'equals'])
 
 #### [String]: type
 
