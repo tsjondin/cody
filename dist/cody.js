@@ -231,8 +231,19 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Lexeme = function Lexeme(value, offset) {
 	_classCallCheck(this, Lexeme);
 
-	this.value = value;
-	this.offset = offset;
+	Object.defineProperty(this, 'value', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: value
+	});
+
+	Object.defineProperty(this, 'offset', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: offset
+	});
 };
 
 exports.default = Lexeme;
