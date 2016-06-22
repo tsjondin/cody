@@ -532,19 +532,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Lexeme = function Lexeme(value, offset) {
 	_classCallCheck(this, Lexeme);
 
-	Object.defineProperty(this, 'value', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: value
-	});
+	this.value = value;
+	this.offset = offset;
 
-	Object.defineProperty(this, 'offset', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: offset
-	});
+	return Object.freeze(this);
 };
 
 exports.default = Lexeme;
@@ -678,47 +669,14 @@ var Token = function Token(type, values) {
 
 	if (typeof type === 'string') type = [type];
 
-	Object.defineProperty(this, 'is_token', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: true
-	});
+	this.is_token = true;
+	this.type = type;
+	this.offset = values[0].offset;
+	this.values = values;
+	this.invalid = !valid;
+	this.valid = valid;
 
-	Object.defineProperty(this, 'type', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: type
-	});
-
-	Object.defineProperty(this, 'offset', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: values[0].offset
-	});
-
-	Object.defineProperty(this, 'values', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: values
-	});
-
-	Object.defineProperty(this, 'invalid', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: !valid
-	});
-
-	Object.defineProperty(this, 'valid', {
-		configurable: false,
-		enumerable: true,
-		writable: false,
-		value: valid
-	});
+	return Object.freeze(this);
 };
 
 exports.default = Token;
