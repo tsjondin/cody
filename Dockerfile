@@ -8,3 +8,4 @@ COPY . /tmp/cody
 
 CMD ["npm", "install"]
 CMD ["npm", "run-script", "build"]
+CMD ["npm", "test"]

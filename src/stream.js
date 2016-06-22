@@ -3,31 +3,43 @@
 export default class Stream {
 
 	constructor (buffer) {
-		this.buffer = buffer;
-		this.position = -1;
+
+		let position = 0;
+
+		this.forward = () => {
+			position++;
+		}
+
+		this.backward = () => {
+			position--;
+		}
+
+		this.current = () => {
+			return buffer[position];
+		}
+
+		this.rewind = () => {
+			position = 0;
+		}
+
 	}
 
 	next () {
-		this.position++;
-		if (this.buffer[this.position]) {
-			return this.buffer[this.position];
-		}
-	}
-
-	revert () {
-		this.position--;
+		let current = this.current();
+		this.forward();
+		return current;
 	}
 
 	until (condition) {
-		let rch, sequence = '';
-		while (rch = this.next()) {
-			if (condition(rch)) {
-				this.revert();
-				return sequence;
+		let character, buffer = '';
+		while (character = this.next()) {
+			if (condition(character)) {
+				this.backward();
+				return buffer;
 			}
-			sequence += rch;
+			buffer += character;
 		}
-		return sequence;
+		return buffer;
 	}
 
 }
