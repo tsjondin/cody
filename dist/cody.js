@@ -486,36 +486,45 @@ var Stream = function () {
 	function Stream(buffer) {
 		_classCallCheck(this, Stream);
 
-		this.buffer = buffer;
-		this.position = -1;
+		var position = 0;
+
+		this.forward = function () {
+			position++;
+		};
+
+		this.backward = function () {
+			position--;
+		};
+
+		this.current = function () {
+			return buffer[position];
+		};
+
+		this.rewind = function () {
+			position = 0;
+		};
 	}
 
 	_createClass(Stream, [{
 		key: "next",
 		value: function next() {
-			this.position++;
-			if (this.buffer[this.position]) {
-				return this.buffer[this.position];
-			}
-		}
-	}, {
-		key: "revert",
-		value: function revert() {
-			this.position--;
+			var current = this.current();
+			this.forward();
+			return current;
 		}
 	}, {
 		key: "until",
 		value: function until(condition) {
-			var rch = void 0,
-			    sequence = '';
-			while (rch = this.next()) {
-				if (condition(rch)) {
-					this.revert();
-					return sequence;
+			var character = void 0,
+			    buffer = '';
+			while (character = this.next()) {
+				if (condition(character)) {
+					this.backward();
+					return buffer;
 				}
-				sequence += rch;
+				buffer += character;
 			}
-			return sequence;
+			return buffer;
 		}
 	}]);
 

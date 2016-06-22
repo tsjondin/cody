@@ -4,7 +4,7 @@
   "description": "Playful parser that may be used for syntax highlighting, validation, hinting etc.",
   "main": "cody.js",
   "scripts": {
-    "build": "./node_modules/.bin/gulp",
+    "install": "./node_modules/.bin/gulp",
     "test": "./node_modules/.bin/mocha --compilers js:babel-core/register"
   },
   "keywords": [
