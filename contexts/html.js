@@ -32,7 +32,6 @@ export default class HTML extends Context {
 				pre_offset = this.get_cursor_offset();
 				length_diff = this.node.textContent.length;
 				do_update = true;
-				console.log("do update");
 			}
 		});
 

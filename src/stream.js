@@ -18,10 +18,13 @@ export default class Stream {
 		this.position--;
 	}
 
-	until (ch) {
+	until (condition) {
 		let rch, sequence = '';
 		while (rch = this.next()) {
-			if (rch === ch) return sequence;
+			if (condition(rch)) {
+				this.revert();
+				return sequence;
+			}
 			sequence += rch;
 		}
 		return sequence;

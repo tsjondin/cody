@@ -54,7 +54,6 @@ var HTML = function (_Context) {
 				pre_offset = _this.get_cursor_offset();
 				length_diff = _this.node.textContent.length;
 				do_update = true;
-				console.log("do update");
 			}
 		});
 

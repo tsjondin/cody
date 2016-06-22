@@ -277,7 +277,7 @@ var Lexer = function (_Emitter) {
   *
   * @param Stream stream The stream to parse
   * @param Function callback Called for every Lexeme found in stream
-  * @return Array<Lexeme> lexemes
+  * @return [Lexeme] lexemes
   */
 
 
@@ -286,54 +286,20 @@ var Lexer = function (_Emitter) {
 		value: function scan(stream, callback) {
 			var _this2 = this;
 
-			var ch = void 0;
-			var ws = "";
 			var value = "";
-
 			var lexemes = [];
 
-			var new_lexeme = function new_lexeme(value, stream) {
-				var L = new _lexeme2.default(value, stream.position - value.length + 1);
-				_this2.emit('lexeme', L);
-				return L;
-			};
+			while (value = stream.next()) {
 
-			while (ch = stream.next()) {
+				if (value.match(/\s/)) value += stream.until(function (C) {
+					return !C.match(/\s/);
+				});else if (this.mode.lexemes.indexOf(value) >= 0) value;else value += stream.until(function (C) {
+					return C.match(/\s/) || _this2.mode.lexemes.indexOf(C) >= 0;
+				});
 
-				if (this.mode.lexemes.indexOf(ch) >= 0) {
-
-					if (ws.length > 0) {
-						lexemes.push(new_lexeme(ws, stream));
-						ws = "";
-					}
-
-					if (value.length > 0) {
-						lexemes.push(new_lexeme(value, stream));
-						value = "";
-					}
-
-					lexemes.push(new_lexeme(ch, stream));
-				} else if (ch === ' ') {
-
-					if (value.length > 0) {
-						if (ws.length > 0) {
-							lexemes.push(new_lexeme(ws, stream));
-							ws = "";
-						}
-						lexemes.push(new_lexeme(value, stream));
-						value = "";
-					}
-
-					ws += ch;
-				} else value += ch;
-			}
-
-			if (ws.length > 0) {
-				lexemes.push(new_lexeme(ws, stream));
-			}
-
-			if (value.length > 0) {
-				lexemes.push(new_lexeme(value, stream));
+				var lexeme = new _lexeme2.default(value, stream.position - value.length);
+				this.emit('lexeme', lexemes[lexemes.length - 1]);
+				lexemes.push(lexeme);
 			}
 
 			return lexemes;
@@ -343,8 +309,8 @@ var Lexer = function (_Emitter) {
    * Takes a list of  Lexeme's, likely from the scan, and
    * returns a list of Token's
    *
-   * @param [<Lexeme>] lexemes
-   * @return [[<Token>] tokens, [<Token>] issues]
+   * @param [Lexeme] lexemes
+   * @return [Token] tokens
    */
 
 	}, {
@@ -431,7 +397,9 @@ var Mode = function (_Emitter) {
 		_this.operators = setup.operators || {};
 		_this.symbols = setup.symbols || {};
 
-		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators));
+		_this.lexemes = [].concat(Object.values(_this.symbols), Object.values(_this.operators).reduce(function (syms, op) {
+			return syms.concat(op.split(''));
+		}, []));
 
 		return _this;
 	}
@@ -537,11 +505,14 @@ var Stream = function () {
 		}
 	}, {
 		key: "until",
-		value: function until(ch) {
+		value: function until(condition) {
 			var rch = void 0,
 			    sequence = '';
 			while (rch = this.next()) {
-				if (rch === ch) return sequence;
+				if (condition(rch)) {
+					this.revert();
+					return sequence;
+				}
 				sequence += rch;
 			}
 			return sequence;
