@@ -1,6 +1,6 @@
 {
   "name": "cody",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Playful parser that may be used for syntax highlighting, validation, hinting etc.",
   "main": "cody.js",
   "scripts": {

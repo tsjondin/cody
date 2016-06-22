@@ -7,3 +7,4 @@ WORKDIR /tmp/cody
 COPY . /tmp/cody
 
 CMD ["npm", "install"]
+CMD ["npm", "run-script", "build"]
