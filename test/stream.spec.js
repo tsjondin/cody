@@ -38,5 +38,13 @@ describe('Stream', () => {
 			expect(stream.current()).to.eql('2');
 		});
 
+		it('will fail', () => {
+			let stream = new Stream.default("123");
+			let segment = stream.until(character => (character === '3'));
+			expect(segment).to.eql('12');
+			stream.backward();
+			expect(stream.current()).to.eql('1');
+		});
+
 	});
 });
