@@ -51,10 +51,13 @@ class Cody extends Emitter {
 			}
 
 		} catch (e) {
+			console.log(e);
 			this.emit('error', e);
 		}
 
+		this.emit('render.before');
 		this.context.do_render(tokens);
+		this.emit('render.after');
 		return this;
 
 	}

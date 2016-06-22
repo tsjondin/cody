@@ -2,10 +2,21 @@
 
 export default class Lexeme {
 
-	constructor (value, offset, lexemes)  {
+	constructor (value, offset)  {
 
-		this.value = value;
-		this.offset = offset
+		Object.defineProperty(this, 'value', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: value
+		});
+
+		Object.defineProperty(this, 'offset', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: offset
+		});
 
 	}
 

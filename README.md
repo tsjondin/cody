@@ -17,34 +17,60 @@ used in large/complex products.
 ## Getting started
 
 	var editor = new Cody({
-		mode: GenericQueryLanguageMode
-		cursor: Cody.Cursors.HTMLCursor
-		renderer: Cody.Renderers.HTLMRenderer
+		mode: {
+			"class": Cody.Modes.genericfilter.default,
+			"options": {}
+		},
+		context: {
+			"class": Cody.Contexts.html.default,
+			"options": {
+				"node": document.getElementById('myEditorViewport')
+			}
+		}
 	});
 
-	var context = document.getElementById('myEditor');
-
-	editor.renderer.set_context(context);
-	editor.cursor.set_context(context);
+	editor.do_update('(a = "filter")');
 
 ## Public Interfaces
 
 ### Cody
 
-#### constructor (Mode.constructor mode)
+#### constructor (object setup)
 
-Creates a new instance of Cody, the mode passed will be used for lexing and
-tokenization of the stream
+Creates a new instance of Cody, Cody must be passed a setup object containing
+at least the setup for the Mode and the Context or it will throw an Error.
 
-#### get_cursor () -> Cursor
+#### do_update (string text) -> self
 
-Gets the Cursor, a reflection of the caret position within the text Cody is
-rendering, can be overriden for different renderings.
+Updates Cody with new text to parse and present.
 
-#### do_update (string text, bool force = false) -> self
+### Events
 
-Updates Cody with new text to parse, by default only updates if there has been
-a change to the content unless the force bool is set to true.
+Cody emits these errors by itself, a Context may extend Cody to emit further
+errors
+
+#### lexeme (&lt;Token&gt;)
+
+Emitted when a new lexeme has been scanned from the stream.
+
+#### token (&lt;Token&gt;)
+
+Emitted when a new Token has been found during evaluation
+
+#### valid ([&lt;Token&gt;])
+
+Emitted if there are no invalid Tokens found after evaluation has completed
+
+#### invalid ([&lt;Token&gt;])
+
+Emitted if there are any invalid Tokens found after evaluation has completed
+
+#### error ([&lt;Token&gt;])
+
+Something went wrong, i.e. thrown and caught error, during evaluation of the
+lexemes or tokenization, this should be listened for when developing a new Mode.
+An error will not stop the tokenization process, simply shift one lexeme and
+try to tokenize again.
 
 ## Mode development
 
@@ -74,22 +100,15 @@ The Mode class is the one to extend when creating a new Mode.
 		...
 	}
 
-A mode has three properties and three public functions that turn the input
-Stream into a sequence of Tokens. A big aim in Cody has been to minimize the
-amount of could you have to but into the Mode but still have full control at
-any point within the parsing to say what is what for the language you are
-parsing.
+A Mode only requires you to define a single method known as **tokenize**,
+however, writing a proper tokenizer will help you in the long run. Cody expects
+you to write the Mode as a recursive descent parser, hence the signature of the
+tokenize function.
 
-#### get_token (string type, Lexeme lexeme)
-#### get_lexeme (mixed value, integer offset)
-#### tokenize (Lexeme, ArrayMutator&lt;Lexeme&gt;) -> Token
+#### tokenize ([&lt;Lexeme&gt;]) -> [Token, accept]
 
-The tokenize function of a Mode takes the current Lexeme and an ArrayMutator of
-all lexemes that have been scanned. The tokenize function should always return a
-Token. The get_token function should in most cases be used to generate the
-Token to return in order to avoid any hassle, use the Token class directly only
-if you need it. In addition your may override the get_token function if you
-want to do something different with it in a general manner.
+The Tokenize method of a Mode takes an array of Lexemes and returns a tuple of
+a Token and the next function to run that will take the lexemes as its argument.
 
 ### Important classes for Mode development
 
@@ -102,65 +121,37 @@ retrieve the raw stream chunk that makes it up.
 ### Lexeme
 
 A part of the Stream that has significance, most often operators and characters
-with syntactic meaning.
+with syntactic meaning. The Lexeme is immutable.
 
-#### set_value (string value) -> self
+#### constructor (string value, integer offset) -> Lexeme
 
-Sets the value of the Lexeme
+Create a new Lexeme
 
-#### set_offset (integer offset) -> self
+#### string: value
 
-Sets the offset of the Lexeme, this is generally inherited from the Stream at
-the position it was read. But a manipulated Lexeme may need an updated offset.
+The value of the Lexeme
 
-#### set_type (string type) -> self
+#### integer: offset
 
-Sets the type of the Token
+The offset of the Lexeme
 
 ### Token
 
-Has one or more Lexeme values as its value and now contains the intended purpose
+Has one or more Lexeme values as its value and now contains the intended
+purpose. The Token is immutable.
 
-#### set_value (string value) -> self
+#### constructor (string type | [&lt;string&gt;] type, [&lt;Lexeme&gt;])
 
-Sets the value of the Token
+Create a new token
 
-#### set_offset (integer offset) -> self
+#### string: value
 
-Sets the offset of the Token, this is generally inherited from the first Lexeme
-that made up the Token but could be different if the Token is manipulated.
+The value of the Token
 
-#### set_type (string type) -> self
+#### integer: offset
 
-Sets the type of the Token
+The offset of the Token
 
-### Item
+#### [String]: type
 
-The representation of a Token the moment before it is rendered. When it is time
-to render an Item it is passed to Cody's rendering function, which you may
-override should you want to, this can be done in order to support other
-renderings than HTML tags, such as JSX.
-
-As can be seen from the methods on an Item, its intention is HTML, but you may
-use the values as you please from a rendering override. Cody's only knowledge
-of HTML resides within the rendering function.
-
-#### add_class (string classname) -> self
-
-Adds a class to the Item class list
-
-#### remove_class (string classname) -> self
-
-Removes the class from the Item class list, if it exists.
-
-#### get_classes () -> Array&lt;string&gt;
-
-Returns a copy of the Items class list
-
-#### set_attribute (string key, mixed value) -> self
-
-Sets an attribute on the Item
-
-#### get_attribute (string key) -> mixed
-
-Retrieves an attribute from the Item
+A list of Token types (for example ['operator', 'equals'])

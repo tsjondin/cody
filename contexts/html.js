@@ -125,15 +125,12 @@ export default class HTML extends Context {
 		classes = classes.map(C => ('cody-' + C));
 
 		node.className = classes.join(' ');
-
-		if (Array.isArray(token.value)) {
-			token.value.map(
-				token => this.get_render(token)
-			).map(node.appendChild.bind(node));
-		} else {
-			node.textContent = token.value;
-			node.setAttribute('data-value', token.value);
-		}
+		token.values.map(
+			value => {
+				if (value.is_token) return this.get_render(value);
+				return document.createTextNode(value.value);
+			}
+		).map(node.appendChild.bind(node));
 
 		return node;
 

@@ -93,7 +93,6 @@ export default class Lexer extends Emitter {
 	 */
 	evaluate (lexemes) {
 
-		let token;
 		let tokens = [];
 		let issues = [];
 		let accept = this.mode.tokenize;
@@ -102,14 +101,17 @@ export default class Lexer extends Emitter {
 		this.mode.on('error', token => this.emit('error', token));
 
 		while (lexemes.length > 0) {
+
+			let token;
+
 			try {
 				[token, accept] = accept.call(this.mode, lexemes);
-				this.emit('token', token);
 				tokens.push(token);
+				this.emit('token', token);
 			} catch (e) {
 				this.emit('error', token);
-				console.log(token, e);
 			}
+
 		}
 
 		return [tokens, issues];

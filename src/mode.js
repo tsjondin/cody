@@ -21,6 +21,18 @@ export default class Mode extends Emitter {
 
 	}
 
+	match (lexemes, value) {
+		return (lexemes[0] && lexemes[0].value.match(value));
+	}
+
+	equals (lexemes, value) {
+		return (lexemes[0] && lexemes[0].value === value);
+	}
+
+	includes (lexemes, list) {
+		return (lexemes[0] && list.includes(lexemes[0].value));
+	}
+
 	consume (lexemes, condition) {
 
 		let lexeme;
@@ -35,18 +47,6 @@ export default class Mode extends Emitter {
 
 	}
 
-	match (lexemes, value) {
-		return (lexemes[0] && lexemes[0].value.match(value));
-	}
-
-	equals (lexemes, value) {
-		return (lexemes[0] && lexemes[0].value === value);
-	}
-
-	includes (lexemes, list) {
-		return (lexemes[0] && list.includes(lexemes[0].value));
-	}
-
 	consume_exclusive (lexemes, condition) {
 
 		let lexeme;
@@ -54,7 +54,7 @@ export default class Mode extends Emitter {
 
 		while (lexeme = lexemes.shift()) {
 			if (condition(lexeme)) {
-				this.revert(lexemes, lexeme);
+				this.revert(lexemes, [lexeme]);
 				return slice;
 			}
 			slice.push(lexeme);
@@ -64,15 +64,15 @@ export default class Mode extends Emitter {
 
 	}
 
-	revert (lexemes, lexeme) {
-		lexemes.unshift(lexeme);
+	revert (lexemes, values) {
+		values.forEach(V => lexemes.unshift(V));
 		return this;
 	}
 
 	tokenize (lexemes) {
 		let lexeme = lexemes.shift();
 		return [
-			new Token('unknown', lexeme.value, lexeme.offset),
+			new Token('unknown', [lexeme], lexeme.offset),
 			this.tokenize
 		];
 	}

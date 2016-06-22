@@ -156,15 +156,10 @@ var HTML = function (_Context) {
 			});
 
 			node.className = classes.join(' ');
-
-			if (Array.isArray(token.value)) {
-				token.value.map(function (token) {
-					return _this2.get_render(token);
-				}).map(node.appendChild.bind(node));
-			} else {
-				node.textContent = token.value;
-				node.setAttribute('data-value', token.value);
-			}
+			token.values.map(function (value) {
+				if (value.is_token) return _this2.get_render(value);
+				return document.createTextNode(value.value);
+			}).map(node.appendChild.bind(node));
 
 			return node;
 		}

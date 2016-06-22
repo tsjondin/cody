@@ -2,49 +2,52 @@
 
 export default class Token {
 
-	constructor (type, value, offset, previous)  {
+	constructor (type, values, valid = true)  {
 
-		this.offset = offset;
-		this.type = [];
-		this.value = value;
-		this.invalid = false;
-
-		this.set_type(type);
-		this.previous = () => previous;
-
-	}
-
-	set_invalid (bool) {
-		this.invalid = bool;
-		return this;
-	}
-
-	set_type (type) {
 		if (typeof(type) === 'string') type = [type];
-		this.type = type;
-		return this;
-	}
 
-	add_type (type) {
-		this.type.push(type);
-		return this;
-	}
+		Object.defineProperty(this, 'is_token', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: true
+		});
 
-	set_value (value) {
-		this.value = value;
-		return this;
-	}
+		Object.defineProperty(this, 'type', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: type
+		});
 
-	get_type () {
-		return this.type;
-	}
+		Object.defineProperty(this, 'offset', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: values[0].offset
+		});
 
-	get_value () {
-		return this.value;
-	}
+		Object.defineProperty(this, 'values', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: values
+		});
 
-	get_offset () {
-		return this.offset;
+		Object.defineProperty(this, 'invalid', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: !valid
+		});
+
+		Object.defineProperty(this, 'valid', {
+			configurable: false,
+			enumerable: true,
+			writable: false,
+			value: valid
+		});
+
 	}
 
 }

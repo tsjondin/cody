@@ -15,9 +15,9 @@ var _mode = require('../src/mode');
 
 var _mode2 = _interopRequireDefault(_mode);
 
-var _token = require('../src/token');
+var _token2 = require('../src/token');
 
-var _token2 = _interopRequireDefault(_token);
+var _token3 = _interopRequireDefault(_token2);
 
 var _lexeme = require('../src/lexeme');
 
@@ -87,9 +87,9 @@ var GeneralFilterLanguage = function (_Mode) {
 		value: function handle_invalid(lexemes) {
 			var lexeme = lexemes.shift();
 			if (lexeme) {
-				return [new _token2.default('invalid', lexeme.value, lexeme.offset).set_invalid(true), this.tokenize];
+				return [new _token3.default('invalid', [lexeme], false), this.tokenize];
 			} else {
-				return [new _token2.default('end', '', 0), function () {}];
+				return [new _token3.default('end', [new _lexeme2.default('', 0)], 0), function () {}];
 			}
 		}
 	}, {
@@ -97,7 +97,7 @@ var GeneralFilterLanguage = function (_Mode) {
 		value: function handle_whitespace(lexemes, accept) {
 			if (this.match(lexemes, /^\s+$/)) {
 				var lexeme = lexemes.shift();
-				return [new _token2.default('whitespace', lexeme.value, lexeme.offset), accept];
+				return [new _token3.default('whitespace', [lexeme]), accept];
 			} else {
 				return this.handle_invalid(lexemes);
 			}
@@ -114,7 +114,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 
 			if (token.type.includes('whitespace')) return [token, this.accept_value];else if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				this.revert(lexemes, token.values);
 
 				var _accept_number = this.accept_number(lexemes);
 
@@ -124,7 +124,7 @@ var GeneralFilterLanguage = function (_Mode) {
 				accept = _accept_number2[1];
 
 				if (token.invalid) {
-					lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+					this.revert(lexemes, token.values);
 
 					var _accept_regexp = this.accept_regexp(lexemes);
 
@@ -150,7 +150,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 			if (token.type.includes('whitespace')) return [token, this.accept_variable];
 			if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				this.revert(lexemes, token.values);
 
 				var _accept_value = this.accept_value(lexemes);
 
@@ -186,7 +186,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 				var tokens = [];
 
-				lexemes.unshift(new _lexeme2.default(token_block.value, token_block.offset));
+				this.revert(lexemes, token_block.values);
 
 				var _accept_variable = this.accept_variable(lexemes);
 
@@ -209,7 +209,7 @@ var GeneralFilterLanguage = function (_Mode) {
 				tokens.push(token_lh);
 
 				if (lexemes.length === 0) {
-					return [new _token2.default('expression', tokens, tokens[0].offset), this.accept_operator];
+					return [new _token3.default('expression', tokens), this.accept_operator];
 				}
 
 				var whitespace = void 0;
@@ -234,8 +234,8 @@ var GeneralFilterLanguage = function (_Mode) {
 				}
 
 				if (!token_op.type.includes('operator')) {
-					lexemes.unshift(new _lexeme2.default(token_op.value, token_op.offset));
-					return [new _token2.default('expression', tokens, tokens[0].offset), this.accept_operator];
+					this.revert(lexemes, token_op.values);
+					return [new _token3.default('expression', tokens), this.accept_operator];
 				}
 				tokens.push(token_op);
 
@@ -261,7 +261,7 @@ var GeneralFilterLanguage = function (_Mode) {
 				var type = ['expression'];
 				if (token_lh.invalid || token_op.invalid || token_rh.invalid) type.push('invalid');
 
-				return [new _token2.default(type, tokens, token_lh.offset), this.accept_operator];
+				return [new _token3.default(type, tokens), this.accept_operator];
 			}
 
 			return [token, accept];
@@ -278,7 +278,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 
 			if (token.type.includes('whitespace')) return [token, this.accept_operator];else if (token.invalid) {
-				lexemes.unshift(new _lexeme2.default(token.value, token.offset));
+				this.revert(lexemes, token.values);
 
 				var _accept_binary_operat5 = this.accept_binary_operator(lexemes);
 
@@ -296,7 +296,6 @@ var GeneralFilterLanguage = function (_Mode) {
 
 			var opsyms = Object.values(this.operators);
 			if (this.includes(lexemes, opsyms)) {
-
 				/**
      * Consume valid operator lexemes until we find one that isn't, and then
      * validate the built operator
@@ -307,12 +306,11 @@ var GeneralFilterLanguage = function (_Mode) {
 				var value = operator.map(function (L) {
 					return L.value;
 				}).join('');
-
 				if (opsyms.includes(value)) {
 					var subtype = Object.keys(this.operators)[opsyms.indexOf(value)];
-					return [new _token2.default(['operator', subtype], value, operator[0].offset), this.accept_variable];
+					return [new _token3.default(['operator', subtype], operator), this.accept_variable];
 				} else {
-					lexemes.unshift(new _lexeme2.default(value, offset));
+					this.revert(lexemes, operator.values);
 					return this.handle_whitespace(lexemes);
 				}
 			}
@@ -325,20 +323,15 @@ var GeneralFilterLanguage = function (_Mode) {
 			var _this2 = this;
 
 			if (this.equals(lexemes, this.operators.slash)) {
-
 				/**
      * Stream lexemes until we find the end of the string
      */
-
-				var regex = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
+				var regexp = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
 					return L.value === _this2.operators.slash;
 				}), this.consume_exclusive(lexemes, function (L) {
 					return !L.value.match(/^[gimuy]+$/);
 				}));
-
-				return [new _token2.default('regexp', regex.map(function (L) {
-					return L.value;
-				}).join(''), regex[0].offset), this.accept_conditional_operator];
+				return [new _token3.default('regexp', regexp), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_regexp);
@@ -349,18 +342,13 @@ var GeneralFilterLanguage = function (_Mode) {
 			var _this3 = this;
 
 			if (this.equals(lexemes, this.symbols.string)) {
-
 				/**
      * Stream lexemes until we find the end of the string
      */
-				var _offset = lexemes[0].offset;
 				var string = [lexemes.shift()].concat(this.consume(lexemes, function (L) {
 					return L.value === _this3.symbols.string;
 				}));
-
-				return [new _token2.default('string', string.map(function (L) {
-					return L.value;
-				}).join(''), _offset), this.accept_conditional_operator];
+				return [new _token3.default('string', string), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_string);
@@ -371,7 +359,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 			if (this.includes(lexemes, this.keywords)) {
 				var lexeme = lexemes.shift();
-				return [new _token2.default(['operator', lexeme.value], lexeme.value, lexeme.offset), this.accept_expression];
+				return [new _token3.default(['operator', lexeme.value], [lexeme]), this.accept_expression];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_conditional_operator);
@@ -382,7 +370,7 @@ var GeneralFilterLanguage = function (_Mode) {
 
 			if (this.match(lexemes, /^[a-zA-Z_][\w_]*$/)) {
 				var lexeme = lexemes.shift();
-				return [new _token2.default('variable', lexeme.value, lexeme.offset), this.accept_binary_operator];
+				return [new _token3.default('variable', [lexeme]), this.accept_binary_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_name);
@@ -392,15 +380,10 @@ var GeneralFilterLanguage = function (_Mode) {
 		value: function accept_number(lexemes) {
 
 			if (this.match(lexemes, /^\d$/)) {
-
-				var _offset2 = lexemes[0].offset;
 				var number = this.consume_exclusive(lexemes, function (L) {
 					return !L.value.match(/^\d$/);
 				});
-
-				return [new _token2.default('number', number.map(function (L) {
-					return L.value;
-				}).join(''), _offset2), this.accept_conditional_operator];
+				return [new _token3.default('number', number), this.accept_conditional_operator];
 			}
 
 			return this.handle_whitespace(lexemes, this.accept_number);
@@ -415,45 +398,45 @@ var GeneralFilterLanguage = function (_Mode) {
 
 					var start = lexemes.shift();
 					var depth = 0;
+
 					var block = _this4.consume(lexemes, function (L) {
 						if (L.value === _this4.symbols.rightparen && depth === 0) return true;else if (L.value === _this4.symbols.rightparen) depth--;else if (L.value === _this4.symbols.leftparen) depth++;
 						return false;
 					});
-					var end = block.pop();
 
+					var end = block.pop();
 					if (end.value !== _this4.symbols.rightparen) {
 						block.push(end);
 						end = null;
 					}
 
 					var tokens = [];
-					var token = void 0;
 					var accept = _this4.tokenize;
 
 					while (block.length > 0) {
+
+						var _token = void 0;
+
 						try {
 							var _accept$call = accept.call(_this4, block);
 
 							var _accept$call2 = _slicedToArray(_accept$call, 2);
 
-							token = _accept$call2[0];
+							_token = _accept$call2[0];
 							accept = _accept$call2[1];
 
-							_this4.emit('token', token);
-							tokens.push(token);
+							_this4.emit('token', _token);
+							tokens.push(_token);
 						} catch (e) {
-							_this4.emit('error', token);
-							console.log(token, e);
+							_this4.emit('error', _token);
 						}
 					}
 
-					tokens.unshift(new _token2.default(['operator', 'leftparen'], start.value, start.offset));
-					if (end) {
-						tokens.push(new _token2.default(['operator', 'rightparen'], end.value, end.offset));
-					}
+					tokens.unshift(new _token3.default(['operator', 'leftparen'], [start]));
+					if (end) tokens.push(new _token3.default(['operator', 'rightparen'], [end]));
 
 					return {
-						v: [new _token2.default('block', tokens, start.offset), _this4.accept_conditional_operator]
+						v: [new _token3.default('block', tokens), _this4.accept_conditional_operator]
 					};
 				}();
 
@@ -546,7 +529,7 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Lexeme = function Lexeme(value, offset, lexemes) {
+var Lexeme = function Lexeme(value, offset) {
 	_classCallCheck(this, Lexeme);
 
 	this.value = value;
@@ -602,20 +585,6 @@ var Mode = function (_Emitter) {
 	}
 
 	_createClass(Mode, [{
-		key: 'consume',
-		value: function consume(lexemes, condition) {
-
-			var lexeme = void 0;
-			var slice = [];
-
-			while (lexeme = lexemes.shift()) {
-				slice.push(lexeme);
-				if (condition(lexeme)) return slice;
-			}
-
-			return slice;
-		}
-	}, {
 		key: 'match',
 		value: function match(lexemes, value) {
 			return lexemes[0] && lexemes[0].value.match(value);
@@ -631,6 +600,20 @@ var Mode = function (_Emitter) {
 			return lexemes[0] && list.includes(lexemes[0].value);
 		}
 	}, {
+		key: 'consume',
+		value: function consume(lexemes, condition) {
+
+			var lexeme = void 0;
+			var slice = [];
+
+			while (lexeme = lexemes.shift()) {
+				slice.push(lexeme);
+				if (condition(lexeme)) return slice;
+			}
+
+			return slice;
+		}
+	}, {
 		key: 'consume_exclusive',
 		value: function consume_exclusive(lexemes, condition) {
 
@@ -639,7 +622,7 @@ var Mode = function (_Emitter) {
 
 			while (lexeme = lexemes.shift()) {
 				if (condition(lexeme)) {
-					this.revert(lexemes, lexeme);
+					this.revert(lexemes, [lexeme]);
 					return slice;
 				}
 				slice.push(lexeme);
@@ -649,15 +632,17 @@ var Mode = function (_Emitter) {
 		}
 	}, {
 		key: 'revert',
-		value: function revert(lexemes, lexeme) {
-			lexemes.unshift(lexeme);
+		value: function revert(lexemes, values) {
+			values.forEach(function (V) {
+				return lexemes.unshift(V);
+			});
 			return this;
 		}
 	}, {
 		key: 'tokenize',
 		value: function tokenize(lexemes) {
 			var lexeme = lexemes.shift();
-			return [new _token2.default('unknown', lexeme.value, lexeme.offset), this.tokenize];
+			return [new _token2.default('unknown', [lexeme], lexeme.offset), this.tokenize];
 		}
 	}]);
 
@@ -673,69 +658,57 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Token = function () {
-	function Token(type, value, offset, previous) {
-		_classCallCheck(this, Token);
+var Token = function Token(type, values) {
+	var valid = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
 
-		this.offset = offset;
-		this.type = [];
-		this.value = value;
-		this.invalid = false;
+	_classCallCheck(this, Token);
 
-		this.set_type(type);
-		this.previous = function () {
-			return previous;
-		};
-	}
+	if (typeof type === 'string') type = [type];
 
-	_createClass(Token, [{
-		key: "set_invalid",
-		value: function set_invalid(bool) {
-			this.invalid = bool;
-			return this;
-		}
-	}, {
-		key: "set_type",
-		value: function set_type(type) {
-			if (typeof type === 'string') type = [type];
-			this.type = type;
-			return this;
-		}
-	}, {
-		key: "add_type",
-		value: function add_type(type) {
-			this.type.push(type);
-			return this;
-		}
-	}, {
-		key: "set_value",
-		value: function set_value(value) {
-			this.value = value;
-			return this;
-		}
-	}, {
-		key: "get_type",
-		value: function get_type() {
-			return this.type;
-		}
-	}, {
-		key: "get_value",
-		value: function get_value() {
-			return this.value;
-		}
-	}, {
-		key: "get_offset",
-		value: function get_offset() {
-			return this.offset;
-		}
-	}]);
+	Object.defineProperty(this, 'is_token', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: true
+	});
 
-	return Token;
-}();
+	Object.defineProperty(this, 'type', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: type
+	});
+
+	Object.defineProperty(this, 'offset', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: values[0].offset
+	});
+
+	Object.defineProperty(this, 'values', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: values
+	});
+
+	Object.defineProperty(this, 'invalid', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: !valid
+	});
+
+	Object.defineProperty(this, 'valid', {
+		configurable: false,
+		enumerable: true,
+		writable: false,
+		value: valid
+	});
+};
 
 exports.default = Token;
 
