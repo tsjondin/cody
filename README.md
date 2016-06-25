@@ -1,5 +1,7 @@
 #!! THIS PROJECT IS FAR FROM USABLE AT THIS MOMENT !!
 
+[![Build Status](https://travis-ci.org/tsjondin/cody.svg?branch=master)](https://travis-ci.org/tsjondin/cody)
+
 What is needed before this could possibly work
 
 - [ ] Handle cursor offest during copy/pasting and deletion of selections
