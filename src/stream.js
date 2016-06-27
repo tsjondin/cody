@@ -4,6 +4,9 @@ export default class Stream {
 
 	constructor (buffer) {
 
+		if (typeof(buffer) != 'string')
+			throw new TypeError("Stream buffer must be of type 'string'");
+
 		let position = 0;
 
 		this.forward = () => {
