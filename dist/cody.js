@@ -297,8 +297,8 @@ var Lexer = function (_Emitter) {
 					return C.match(/\s/) || _this2.mode.lexemes.indexOf(C) >= 0;
 				});
 
-				var lexeme = new _lexeme2.default(value, stream.position - value.length);
-				this.emit('lexeme', lexemes[lexemes.length - 1]);
+				var lexeme = new _lexeme2.default(value, stream.position() - value.length);
+				this.emit('lexeme', lexeme);
 				lexemes.push(lexeme);
 			}
 
@@ -486,6 +486,8 @@ var Stream = function () {
 	function Stream(buffer) {
 		_classCallCheck(this, Stream);
 
+		if (typeof buffer != 'string') throw new TypeError("Stream buffer must be of type 'string'");
+
 		var position = 0;
 
 		this.forward = function () {
@@ -502,6 +504,10 @@ var Stream = function () {
 
 		this.rewind = function () {
 			position = 0;
+		};
+
+		this.position = function () {
+			return position;
 		};
 	}
 
@@ -542,7 +548,8 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Token = function Token(type, values) {
+var Token = function Token(type) {
+	var values = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 	var valid = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
 
 	_classCallCheck(this, Token);
@@ -551,7 +558,7 @@ var Token = function Token(type, values) {
 
 	this.is_token = true;
 	this.type = type;
-	this.offset = values[0].offset;
+	this.offset = values[0] ? values[0].offset : 0;
 	this.values = values;
 	this.invalid = !valid;
 	this.valid = valid;

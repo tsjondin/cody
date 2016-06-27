@@ -160,6 +160,7 @@ var HTML = function (_Context) {
 				return document.createTextNode(value.value);
 			}).map(node.appendChild.bind(node));
 
+			node.setAttribute('data-value', node.textContent);
 			return node;
 		}
 	}, {

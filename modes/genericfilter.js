@@ -49,7 +49,9 @@ export default class GeneralFilterLanguage extends Mode {
 	}
 
 	tokenize (lexemes) {
+
 		return this.accept_expression(lexemes);
+
 	}
 
 	handle_invalid (lexemes) {

@@ -4,15 +4,19 @@ import Lexeme from './lexeme';
 import Token from './token';
 import Emitter from './emitter';
 
+if (!Object.values) {
+	Object.values = (o) => Object.keys(o).map(K => o[K]);
+}
+
 export default class Mode extends Emitter {
 
-	constructor (setup) {
+	constructor (setup = {}) {
 
 		super();
 
-		this.keywords = setup.keywords || {};
-		this.operators = setup.operators || {};
-		this.symbols = setup.symbols || {};
+		this.keywords = setup.keywords ? setup.keywords : {};
+		this.operators = setup.operators ? setup.operators : {};
+		this.symbols = setup.symbols ? setup.symbols : {};
 
 		this.lexemes = [].concat(
 			Object.values(this.symbols),
@@ -74,7 +78,7 @@ export default class Mode extends Emitter {
 	tokenize (lexemes) {
 		let lexeme = lexemes.shift();
 		return [
-			new Token('unknown', [lexeme], lexeme.offset),
+			new Token('unknown', [lexeme]),
 			this.tokenize
 		];
 	}

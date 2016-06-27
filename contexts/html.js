@@ -115,6 +115,12 @@ export default class HTML extends Context {
 		}
 	}
 
+	/**
+	 * Returns the Node render of a Token
+	 *
+	 * @param Token token
+	 * @return HTMLElement node
+	 */
 	get_render (token) {
 
 		let node = document.createElement('span');
@@ -131,10 +137,16 @@ export default class HTML extends Context {
 			}
 		).map(node.appendChild.bind(node));
 
+		node.setAttribute('data-value', node.textContent);
 		return node;
 
 	}
 
+	/**
+	 * Performs the rendering of a list of tokens within the HTML context
+	 *
+	 * @param [Token]
+	 */
 	do_render (tokens) {
 
 		window.requestAnimationFrame(() => {

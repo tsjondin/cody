@@ -80,6 +80,7 @@ var GeneralFilterLanguage = function (_Mode) {
 	_createClass(GeneralFilterLanguage, [{
 		key: 'tokenize',
 		value: function tokenize(lexemes) {
+
 			return this.accept_expression(lexemes);
 		}
 	}, {
@@ -664,7 +665,8 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Token = function Token(type, values) {
+var Token = function Token(type) {
+	var values = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 	var valid = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
 
 	_classCallCheck(this, Token);
@@ -673,7 +675,7 @@ var Token = function Token(type, values) {
 
 	this.is_token = true;
 	this.type = type;
-	this.offset = values[0].offset;
+	this.offset = values[0] ? values[0].offset : 0;
 	this.values = values;
 	this.invalid = !valid;
 	this.valid = valid;

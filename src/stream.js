@@ -25,6 +25,10 @@ export default class Stream {
 			position = 0;
 		}
 
+		this.position = () => {
+			return position;
+		}
+
 	}
 
 	next () {
